@@ -1,0 +1,8 @@
+[package]
+name = "factorial-calculator"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+indicatif = "0.17.7"
+rug = "1.22.0"
