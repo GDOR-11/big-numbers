@@ -15,7 +15,10 @@ pub fn get_closest_calculated_number(number: u64, directory: &str) -> (u64, Inte
     for calculated_num in calculated_nums {
         if calculated_num < number && !closest_calculated_num.is_some_and(|num| calculated_num < num) {
             closest_calculated_num = Some(calculated_num);
-        } else if calculated_num == number { std::process::exit(0); }
+        } else if calculated_num == number {
+            println!("File already exists!");
+            std::process::exit(0);
+        }
     }
 
     if closest_calculated_num.is_none() { return (0, Integer::from(1)); }
