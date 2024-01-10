@@ -1,5 +1,5 @@
 [package]
-name = "factorial-calculator"
+name = "factorial_calculator"
 version = "0.1.0"
 edition = "2021"
 
