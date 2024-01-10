@@ -5,7 +5,7 @@ use rug::Integer;
 pub fn get_closest_calculated_number(number: u64, directory: &str) -> (u64, Integer) {
     let calculated_nums: Vec<u64> = match fs::read_dir(directory) {
         Ok(paths) => paths,
-        Err(reason) => panic!("Could not read directory '{directory}'\n\nReason: {reason}")
+        Err(_) => return (0, Integer::from(1))
     }.filter_map(|path| {
         let path = String::from(path.ok()?.path().to_str()?);
         path[directory.len() + 1..path.len() - 4].parse::<u64>().ok()
@@ -42,5 +42,6 @@ pub fn get_closest_calculated_number(number: u64, directory: &str) -> (u64, Inte
 }
 
 pub fn save_factorial(number: u64, factorial: &Integer, directory: &str) -> Result<(), std::io::Error> {
+    fs::create_dir_all(directory)?;
     File::create(format!("{directory}/{number}.txt"))?.write_all(factorial.to_string().as_bytes())
 }
