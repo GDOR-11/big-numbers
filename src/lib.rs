@@ -2,13 +2,17 @@ use std::fs::{self, File};
 use std::io::Write;
 use rug::Integer;
 
+pub fn filepath(directory: &str, number: u64) -> String {
+    format!("{directory}/{number}/{number}.ftrl")
+}
+
 pub fn get_closest_calculated_number(number: u64, directory: &str) -> (u64, Integer) {
     let calculated_nums: Vec<u64> = match fs::read_dir(directory) {
         Ok(paths) => paths,
         Err(_) => return (0, Integer::from(1))
     }.filter_map(|path| {
         let path = String::from(path.ok()?.path().to_str()?);
-        path[directory.len() + 1..path.len() - 4].parse::<u64>().ok()
+        path[directory.len() + 1..].parse::<u64>().ok()
     }).collect();
 
     let mut closest_calculated_num = None;
@@ -24,12 +28,11 @@ pub fn get_closest_calculated_number(number: u64, directory: &str) -> (u64, Inte
     if closest_calculated_num.is_none() { return (0, Integer::from(1)); }
     let closest_calculated_num = closest_calculated_num.unwrap();
 
-    match fs::read_to_string(&format!("{directory}/{closest_calculated_num}.txt")) {
-        Ok(string) => {
+    match fs::read_to_string(filepath(directory, closest_calculated_num)) {
+        Ok(file) => {
             println!("Found file with {closest_calculated_num} factorial!");
-            println!("Reading file...");
-            let factorial = Integer::from_str_radix(&string, 10);
-            if let Ok(factorial) = factorial {
+            println!("Processing file...");
+            if let Ok(factorial) = Integer::from_str_radix(&file, 10) {
                 println!("File read successfully!");
                 (closest_calculated_num, factorial)
             } else {
@@ -42,6 +45,8 @@ pub fn get_closest_calculated_number(number: u64, directory: &str) -> (u64, Inte
 }
 
 pub fn save_factorial(number: u64, factorial: &Integer, directory: &str) -> Result<(), std::io::Error> {
-    fs::create_dir_all(directory)?;
-    File::create(format!("{directory}/{number}.txt"))?.write_all(factorial.to_string().as_bytes())
+    if let Some(directory) = std::path::Path::new(&filepath(directory, number)).parent() {
+        fs::create_dir_all(directory)?;
+    }
+    File::create(filepath(directory, number))?.write_all(factorial.to_string().as_bytes())
 }
