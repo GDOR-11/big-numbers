@@ -3,7 +3,7 @@ use std::io::Write;
 use rug::Integer;
 
 pub fn filepath(directory: &str, number: u64) -> String {
-    format!("{directory}/{number}/{number}.ftrl")
+    format!("{directory}/{number}/{number}.txt")
 }
 
 pub fn get_closest_calculated_number(number: u64, directory: &str) -> (u64, Integer) {
