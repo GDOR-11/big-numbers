@@ -11,4 +11,4 @@ git sparse-checkout set src
 
 But, of course, by not downloading all the factorials the program will not be able to use the other factorials to skip calculations that have already been done. I will soon add a ```factorials.txt``` with the numbers that have their factorials already calculated in this repository and make the program automatically download the closest factorial to skip the maximum amount of calculation while not downloading *all* the factorials, ~~but until then you will have to manually run ```git sparse-checkout factorials/<factorial>.txt``` in order to use other factorials~~ turns out you can't download individual files so it's all or nothing until I come back to change the structure of the project
 
-To download all the factorials you can simply run ```git sparse-checkout add factorials```
+To download all the factorials you can simply run ```git sparse-checkout add factorials``` after all the above commands
