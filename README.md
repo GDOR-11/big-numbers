@@ -3,7 +3,7 @@ a bunch of big factorials to share on <a href="https://reddit.com/r/unexpectedfa
 
 in order to use this project while not downloading all the unnecessary factorials, I recommend using <a href="https://github.com/microsoft/git?tab=readme-ov-file">microsoft/git</a> instead of git, and then use these commands:
 ```
-scalar clone --no-src https://github.com/GDOR-11/big-factorials-repertoire.git
+scalar clone --no-src https://github.com/GDOR-11/big-factorials-repertoire.git <desired directory name>
 cd big-factorials-repertoire
 git sparse-checkout set src
 ```
