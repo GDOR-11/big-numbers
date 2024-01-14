@@ -1,4 +1,4 @@
-# big-factorials-repertoire
+# factorial-calculator
 a bunch of big factorials to share on <a href="https://reddit.com/r/unexpectedfactorial">r/unexpectedfactorial</a>
 
 in order to use this project while not downloading all the unnecessary factorials, I recommend using <a href="https://github.com/microsoft/git?tab=readme-ov-file">microsoft/git</a> instead of git, and then use these commands:
