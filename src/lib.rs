@@ -103,17 +103,36 @@ pub async fn get_closest_calculated_number(number: u64, directory: &str, use_rem
 
     let factorial = Integer::from_str_radix(
         &read_file(&filepath(directory, closest_calculated_num), use_remote_files).await?,
-        10
+        36
     ).ok()?;
 
     Some((closest_calculated_num, factorial))
 }
 
-fn save_file_to_local(file_path: &str, content: &str) -> Result<(), std::io::Error> {
+fn create_local_file(file_path: &str, content: &str) -> Result<(), std::io::Error> {
     if let Some(directory) = std::path::Path::new(file_path).parent() {
         fs::create_dir_all(directory)?;
     }
     File::create(file_path)?.write_all(content.as_bytes())
 }
-pub fn save_factorial(number: u64, factorial: &Integer, directory: &str) -> Result<(), std::io::Error> {
+fn delete_file(file_path: &str) -> Result<(), std::io::Error> {
+    fs::remove_file(file_path)
+}
+fn save_file_to_remote(file_path: &str) -> Result<(), std::io::Error> {
+    Command::new("git")
+        .args(["add", file_path])
+        .status()?;
+    Command::new("git")
+        .args(["commit", "-m", "\"Adding files automatically\""])
+        .status()?;
+    Ok(())
+}
+pub fn save_factorial(number: u64, factorial: &Integer, directory: &str, save_to_remote: bool) -> Result<(), std::io::Error> {
+    let file_path = &filepath(directory, number);
+    create_local_file(file_path, &factorial.to_string_radix(36))?;
+    if save_to_remote {
+        save_file_to_remote(file_path)?;
+        delete_file(file_path)?;
+    }
+    Ok(())
 }

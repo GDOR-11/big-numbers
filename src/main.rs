@@ -33,9 +33,9 @@ async fn main() {
             progress_bar.set_position(x);
         }
         if save_step.is_some_and(|save_step| x % save_step == 0) {
-            save_factorial(x, &factorial, DIRECTORY).expect(&format!("Could not save file '{}'", filepath(DIRECTORY, x)));            
+            save_factorial(x, &factorial, DIRECTORY, use_remote_files).expect(&format!("Could not save file '{}'", filepath(DIRECTORY, x)));            
         }
     }
 
-    save_factorial(target, &factorial, DIRECTORY).expect(&format!("Could not save file '{}'", filepath(DIRECTORY, target)));
+    save_factorial(target, &factorial, DIRECTORY, use_remote_files).expect(&format!("Could not save file '{}'", filepath(DIRECTORY, target)));
 }
