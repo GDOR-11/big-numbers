@@ -22,10 +22,10 @@ If there are already other calculated factorials below the target, there will be
 For example, if 2500000 is already calculated locally and you run the calculator with ```target=5000000``` and ```save-step=1000000```,
 only 3000000, 4000000 and 5000000 will be saved.
 
-### use-git-sparse-checkout
-Specifies wether git sparse-checkout should be used to get factorial files from the remote repository instead of the local repository
+### use-remote-files
+Specifies wether the github repository should be used to get factorial files instead of the local repository
+If on, it will also only save to the repository.
 Must be `yes`/`true` or `no`/`false`, and by default it is disabled
-
 
 ## EXAMPLES
 
@@ -33,4 +33,4 @@ The following will create local files for 1000, 2000, 3000, 4000 and 5000 if the
     factorial_calculator target=5000 save-step=1000
 
 The following will create remote files for 1000000, 2000000 and 3000000 if there are no ther precalculated factorials below 3000000:
-    factorial_calculator target=3000000 save-step=1000000 use-git-sparse-checkout=true
+    factorial_calculator target=3000000 save-step=1000000 use-remote-files=true

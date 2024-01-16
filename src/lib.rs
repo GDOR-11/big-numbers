@@ -54,7 +54,7 @@ pub fn interpret_arguments(args: Vec<String>) -> Result<CLIArguments, CLIArgumen
                     return Err(CLIArgumentsError::IncorrectArguments(format!("save-step must be a non-negative integer less than or equal to {}", u64::MAX)))
                 }
             },
-            "use-git-sparse-checkout" => {
+            "use-remote_files" => {
                 use_remote_files = match value {
                     "yes" | "true" | "easter egg :D" => Some(true),
                     "no" | "false" => Some(false),
