@@ -4,6 +4,7 @@ use std::io::Write;
 use rug::Integer;
 use termimad::MadSkin;
 use reqwest;
+use std::process::Command;
 
 pub struct CLIArguments {
     pub target_number: u64,
@@ -108,9 +109,11 @@ pub async fn get_closest_calculated_number(number: u64, directory: &str, use_rem
     Some((closest_calculated_num, factorial))
 }
 
-pub fn save_factorial(number: u64, factorial: &Integer, directory: &str) -> Result<(), std::io::Error> {
-    if let Some(directory) = std::path::Path::new(&filepath(directory, number)).parent() {
+fn save_file_to_local(file_path: &str, content: &str) -> Result<(), std::io::Error> {
+    if let Some(directory) = std::path::Path::new(file_path).parent() {
         fs::create_dir_all(directory)?;
     }
-    File::create(filepath(directory, number))?.write_all(factorial.to_string().as_bytes())
+    File::create(file_path)?.write_all(content.as_bytes())
+}
+pub fn save_factorial(number: u64, factorial: &Integer, directory: &str) -> Result<(), std::io::Error> {
 }
