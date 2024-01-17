@@ -141,7 +141,7 @@ fn delete_path(path: &Path) -> Result<(), SaveError> {
 
 fn save_file_to_remote(file_path: &str) -> Result<(), SaveError> {
     if Command::new("git")
-        .args(["status", "--untracked-files=no", "--porcelain"])
+        .args(["log", "--branches", "--not", "--remotes"])
         .output()?.stdout.len() != 0 {
         return Err(SaveError::WorkingTreeNotClean);
     }
