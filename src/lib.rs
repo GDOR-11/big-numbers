@@ -1,6 +1,7 @@
 use std::fmt;
 use std::fs::{self, File};
 use std::io::Write;
+use std::path::Path;
 use rug::Integer;
 use termimad::MadSkin;
 use reqwest;
@@ -120,15 +121,14 @@ impl From<std::io::Error> for SaveError {
     }
 }
 
-fn create_local_file(file_path: &str, content: &str) -> Result<(), SaveError> {
-    if let Some(directory) = std::path::Path::new(file_path).parent() {
+fn create_local_file(path: &Path, content: &str) -> Result<(), SaveError> {
+    if let Some(directory) = path.parent() {
         fs::create_dir_all(directory)?;
     }
-    File::create(file_path)?.write_all(content.as_bytes())?;
+    File::create(path)?.write_all(content.as_bytes())?;
     Ok(())
 }
-fn delete_file(file_path: &str) -> Result<(), SaveError> {
-    let path = std::path::Path::new(file_path);
+fn delete_path(path: &Path) -> Result<(), SaveError> {
     if path.is_file() {
         fs::remove_file(path)?;
     } else if path.is_dir() {
@@ -157,10 +157,10 @@ fn save_file_to_remote(file_path: &str) -> Result<(), SaveError> {
 }
 pub fn save_factorial(number: u64, factorial: &Integer, directory: &str, save_to_remote: bool) -> Result<(), SaveError> {
     let file_path = &filepath(directory, number);
-    create_local_file(file_path, &factorial.to_string_radix(36))?;
+    create_local_file(Path::new(file_path), &factorial.to_string_radix(36))?;
     if save_to_remote {
         save_file_to_remote(file_path)?;
-        delete_file(file_path)?;
+        delete_path(Path::new(file_path))?;
     }
     Ok(())
 }
