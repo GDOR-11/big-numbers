@@ -28,6 +28,10 @@ async fn main() {
                 eprintln!("Could not save file '{}' to remote, as the working tree is not clean", file_path);
                 std::process::exit(1);
             },
+            Err(SaveError::FileDoesNotExist) => {
+                eprintln!("Attempted to do operations on a non-existent file, Exiting early...");
+                std::process::exit(1);
+            },
             Err(SaveError::IoError(error)) => {
                 eprintln!("Could not save file '{}' due to an error:\n{}", file_path, error);
                 std::process::exit(1);

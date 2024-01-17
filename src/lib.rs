@@ -111,6 +111,7 @@ pub async fn get_closest_calculated_number(number: u64, directory: &str, use_rem
 
 pub enum SaveError {
     WorkingTreeNotClean,
+    FileDoesNotExist,
     IoError(std::io::Error)
 }
 impl From<std::io::Error> for SaveError {
@@ -126,8 +127,16 @@ fn create_local_file(file_path: &str, content: &str) -> Result<(), SaveError> {
     File::create(file_path)?.write_all(content.as_bytes())?;
     Ok(())
 }
-fn delete_file(file_path: &str) -> Result<(), std::io::Error> {
-    fs::remove_file(file_path)
+fn delete_file(file_path: &str) -> Result<(), SaveError> {
+    let path = std::path::Path::new(file_path);
+    if path.is_file() {
+        fs::remove_file(path)?;
+    } else if path.is_dir() {
+        fs::remove_dir_all(path)?;
+    } else {
+        return Err(SaveError::FileDoesNotExist);
+    }
+    Ok(())
 }
 
 fn save_file_to_remote(file_path: &str) -> Result<(), SaveError> {
@@ -138,9 +147,11 @@ fn save_file_to_remote(file_path: &str) -> Result<(), SaveError> {
     }
     Command::new("git")
         .args(["add", file_path])
+        .stdout(std::process::Stdio::null())
         .status()?;
     Command::new("git")
         .args(["commit", "-m", "\"Adding files automatically\""])
+        .stdout(std::process::Stdio::null())
         .status()?;
     Ok(())
 }
