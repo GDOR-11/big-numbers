@@ -54,7 +54,7 @@ pub fn interpret_arguments(args: Vec<String>) -> Result<CLIArguments, CLIArgumen
                     return Err(CLIArgumentsError::IncorrectArguments(format!("save-step must be a non-negative integer less than or equal to {}", u64::MAX)))
                 }
             },
-            "use-remote_files" => {
+            "use-remote-files" => {
                 use_remote_files = match value {
                     "yes" | "true" | "easter egg :D" => Some(true),
                     "no" | "false" => Some(false),
@@ -109,16 +109,33 @@ pub async fn get_closest_calculated_number(number: u64, directory: &str, use_rem
     Some((closest_calculated_num, factorial))
 }
 
-fn create_local_file(file_path: &str, content: &str) -> Result<(), std::io::Error> {
+pub enum SaveError {
+    WorkingTreeNotClean,
+    IoError(std::io::Error)
+}
+impl From<std::io::Error> for SaveError {
+    fn from(error: std::io::Error) -> Self {
+        Self::IoError(error)
+    }
+}
+
+fn create_local_file(file_path: &str, content: &str) -> Result<(), SaveError> {
     if let Some(directory) = std::path::Path::new(file_path).parent() {
         fs::create_dir_all(directory)?;
     }
-    File::create(file_path)?.write_all(content.as_bytes())
+    File::create(file_path)?.write_all(content.as_bytes())?;
+    Ok(())
 }
 fn delete_file(file_path: &str) -> Result<(), std::io::Error> {
     fs::remove_file(file_path)
 }
-fn save_file_to_remote(file_path: &str) -> Result<(), std::io::Error> {
+
+fn save_file_to_remote(file_path: &str) -> Result<(), SaveError> {
+    if Command::new("git")
+        .args(["status", "--untracked-files=no", "--porcelain"])
+        .output()?.stdout.len() != 0 {
+        return Err(SaveError::WorkingTreeNotClean);
+    }
     Command::new("git")
         .args(["add", file_path])
         .status()?;
@@ -127,7 +144,7 @@ fn save_file_to_remote(file_path: &str) -> Result<(), std::io::Error> {
         .status()?;
     Ok(())
 }
-pub fn save_factorial(number: u64, factorial: &Integer, directory: &str, save_to_remote: bool) -> Result<(), std::io::Error> {
+pub fn save_factorial(number: u64, factorial: &Integer, directory: &str, save_to_remote: bool) -> Result<(), SaveError> {
     let file_path = &filepath(directory, number);
     create_local_file(file_path, &factorial.to_string_radix(36))?;
     if save_to_remote {
