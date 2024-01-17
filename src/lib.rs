@@ -112,7 +112,7 @@ pub async fn get_closest_calculated_number(number: u64, directory: &str, use_rem
 
 pub enum SaveError {
     WorkingTreeNotClean,
-    FileDoesNotExist,
+    PathDoesNotExist,
     IoError(std::io::Error)
 }
 impl From<std::io::Error> for SaveError {
@@ -134,7 +134,7 @@ fn delete_path(path: &Path) -> Result<(), SaveError> {
     } else if path.is_dir() {
         fs::remove_dir_all(path)?;
     } else {
-        return Err(SaveError::FileDoesNotExist);
+        return Err(SaveError::PathDoesNotExist);
     }
     Ok(())
 }
@@ -160,7 +160,11 @@ pub fn save_factorial(number: u64, factorial: &Integer, directory: &str, save_to
     create_local_file(Path::new(file_path), &factorial.to_string_radix(36))?;
     if save_to_remote {
         save_file_to_remote(file_path)?;
-        delete_path(Path::new(file_path))?;
+        delete_path(
+            Path::new(file_path)
+                .parent()
+                .ok_or(SaveError::PathDoesNotExist)?
+        )?;
     }
     Ok(())
 }
