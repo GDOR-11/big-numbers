@@ -145,12 +145,24 @@ fn save_file_to_remote(file_path: &str) -> Result<(), SaveError> {
         .output()?.stdout.len() != 0 {
         return Err(SaveError::WorkingTreeNotClean);
     }
+    // git reset
+    // git add --sparse <file path>
+    // git commit -m "Adding files automatically"
+    // git push origin main
     Command::new("git")
-        .args(["add", file_path])
+        .arg("reset")
+        .stdout(std::process::Stdio::null())
+        .status()?;
+    Command::new("git")
+        .args(["add", "--sparse", file_path])
         .stdout(std::process::Stdio::null())
         .status()?;
     Command::new("git")
         .args(["commit", "-m", "\"Adding files automatically\""])
+        .stdout(std::process::Stdio::null())
+        .status()?;
+    Command::new("git")
+        .args(["push", "origin", "main"])
         .stdout(std::process::Stdio::null())
         .status()?;
     Ok(())
