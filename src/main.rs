@@ -22,22 +22,11 @@ async fn main() {
     let save = |number: u64, factorial: &Integer| {
         let file_path = filepath(DIRECTORY, number);
 
-        match save_factorial(number, factorial, DIRECTORY, use_remote_files) {
-            Ok(_) => (),
-            Err(SaveError::WorkingTreeNotClean) => {
-                eprintln!("Could not save file '{}' to remote, as the working tree is not clean", file_path);
-                std::process::exit(1);
-            },
-            Err(SaveError::PathDoesNotExist) => {
-                eprintln!("Attempted to do operations on a non-existent file, Exiting early...");
-                std::process::exit(1);
-            },
-            Err(SaveError::IoError(error)) => {
-                eprintln!("Could not save file '{}' due to an error:\n{}", file_path, error);
-                std::process::exit(1);
-            }
+        if !save_factorial(number, factorial, DIRECTORY, use_remote_files) {
+            eprintln!("Could not save file {}.", file_path);
         }
     };
+
 
     let closest_calculated_number = get_closest_calculated_number(target, DIRECTORY, use_remote_files).await.unwrap_or((0, Integer::from(1)));
     println!("Calculating {target}!, starting from {}!", closest_calculated_number.0);

@@ -1,11 +1,11 @@
+mod local_files_handler;
+mod remote_files_handler;
+
 use std::fmt;
-use std::fs::{self, File};
-use std::io::Write;
+use std::fs;
 use std::path::Path;
 use rug::Integer;
 use termimad::MadSkin;
-use reqwest;
-use std::process::Command;
 
 pub struct CLIArguments {
     pub target_number: u64,
@@ -77,13 +77,11 @@ pub fn filepath(directory: &str, number: u64) -> String {
     format!("{directory}/{number}/{number}.txt")
 }
 
-async fn read_file(filepath: &str, from_remote: bool) -> Option<String> {
-    if from_remote {
-        reqwest::get(
-            format!("https://raw.githubusercontent.com/GDOR-11/factorial-calculator/main/{filepath}")
-        ).await.ok()?.text().await.ok()
+async fn read_file(file_path: &str, remote: bool) -> Option<String> {
+    if remote {
+        remote_files_handler::read_file(file_path).await.ok()
     } else {
-        fs::read_to_string(filepath).ok()
+        local_files_handler::read_file(Path::new(file_path)).ok()
     }
 }
 
@@ -110,73 +108,21 @@ pub async fn get_closest_calculated_number(number: u64, directory: &str, use_rem
     Some((closest_calculated_num, factorial))
 }
 
-pub enum SaveError {
-    WorkingTreeNotClean,
-    PathDoesNotExist,
-    IoError(std::io::Error)
-}
-impl From<std::io::Error> for SaveError {
-    fn from(error: std::io::Error) -> Self {
-        Self::IoError(error)
-    }
-}
 
-fn create_local_file(path: &Path, content: &str) -> Result<(), SaveError> {
-    if let Some(directory) = path.parent() {
-        fs::create_dir_all(directory)?;
-    }
-    File::create(path)?.write_all(content.as_bytes())?;
-    Ok(())
-}
-fn delete_path(path: &Path) -> Result<(), SaveError> {
-    if path.is_file() {
-        fs::remove_file(path)?;
-    } else if path.is_dir() {
-        fs::remove_dir_all(path)?;
-    } else {
-        return Err(SaveError::PathDoesNotExist);
-    }
-    Ok(())
-}
-
-fn save_file_to_remote(file_path: &str) -> Result<(), SaveError> {
-    if Command::new("git")
-        .args(["log", "--branches", "--not", "--remotes"])
-        .output()?.stdout.len() != 0 {
-        return Err(SaveError::WorkingTreeNotClean);
-    }
-    // git reset
-    // git add --sparse <file path>
-    // git commit -m "Adding files automatically"
-    // git push origin main
-    Command::new("git")
-        .arg("reset")
-        .stdout(std::process::Stdio::null())
-        .status()?;
-    Command::new("git")
-        .args(["add", "--sparse", file_path])
-        .stdout(std::process::Stdio::null())
-        .status()?;
-    Command::new("git")
-        .args(["commit", "-m", "\"Adding files automatically\""])
-        .stdout(std::process::Stdio::null())
-        .status()?;
-    Command::new("git")
-        .args(["push", "origin", "main"])
-        .stdout(std::process::Stdio::null())
-        .status()?;
-    Ok(())
-}
-pub fn save_factorial(number: u64, factorial: &Integer, directory: &str, save_to_remote: bool) -> Result<(), SaveError> {
+pub fn save_factorial_to_local(number: u64, factorial: &Integer, directory: &str) -> std::io::Result<()> {
     let file_path = &filepath(directory, number);
-    create_local_file(Path::new(file_path), &factorial.to_string_radix(36))?;
-    if save_to_remote {
-        save_file_to_remote(file_path)?;
-        delete_path(
-            Path::new(file_path)
-                .parent()
-                .ok_or(SaveError::PathDoesNotExist)?
-        )?;
+    local_files_handler::create_file(Path::new(file_path), &factorial.to_string_radix(36))
+}
+
+pub fn save_factorial_to_remote(number: u64, factorial: &Integer, directory: &str) -> Result<(), remote_files_handler::RemoteError> {
+    let file_path = &filepath(directory, number);
+    remote_files_handler::create_file(file_path, &factorial.to_string_radix(36))
+}
+
+pub fn save_factorial(number: u64, factorial: &Integer, directory: &str, remote: bool) -> bool {
+    if remote {
+        save_factorial_to_remote(number, factorial, directory).is_ok()
+    } else {
+        save_factorial_to_local(number, factorial, directory).is_ok()
     }
-    Ok(())
 }
