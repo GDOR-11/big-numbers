@@ -122,6 +122,7 @@ pub async fn get_closest_calculated_number(number: u64, use_remote_files: bool) 
 
 pub fn save_factorial_to_local(number: u64, factorial: &Integer) -> std::io::Result<()> {
     let file_path = &factorial_path(number);
+
     let mut factorials = local_files_handler::read_file(Path::new(LOCAL_FACTORIALS_PATH))?;
     factorials += &format!("\n{number}");
     local_files_handler::write_file(Path::new(file_path), &factorial.to_string_radix(36))?;
@@ -132,8 +133,10 @@ pub fn save_factorial_to_local(number: u64, factorial: &Integer) -> std::io::Res
 
 pub async fn save_factorial_to_remote(number: u64, factorial: &Integer) -> Result<(), remote_files_handler::RemoteError> {
     let file_path = &factorial_path(number);
+
     let mut factorials = remote_files_handler::read_file(&REMOTE_FACTORIALS_PATH).await?;
-    factorials += &format!("\n{number}");
+    factorials.push_str(&format!("\n{number}"));
+
     remote_files_handler::write_file(file_path, &factorial.to_string_radix(36))?;
     remote_files_handler::write_file(REMOTE_FACTORIALS_PATH, &factorials)?;
     

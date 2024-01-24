@@ -13,10 +13,3 @@ pub fn write_file(path: &Path, content: &str) -> Result<()> {
     File::create(path)?.write_all(content.as_bytes())?;
     Ok(())
 }
-pub fn delete_path(path: &Path) -> Result<()> {
-    if path.is_file() {
-        fs::remove_file(path)
-    } else {
-        fs::remove_dir_all(path)
-    }
-}
