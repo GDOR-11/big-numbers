@@ -7,6 +7,19 @@ use std::path::Path;
 use rug::Integer;
 use termimad::MadSkin;
 
+pub fn factorial_path(number: u64) -> String {
+    format!("factorials/{number}/{number}.txt")
+}
+pub const LOCAL_FACTORIALS_PATH: &str = "factorials/factorials/local.txt";
+pub const REMOTE_FACTORIALS_PATH: &str = "factorials/factorials/remote.txt";
+pub fn factorials_path(remote: bool) -> &'static str {
+    if remote {
+        REMOTE_FACTORIALS_PATH
+    } else {
+        LOCAL_FACTORIALS_PATH
+    }
+}
+
 pub struct CLIArguments {
     pub target_number: u64,
     pub save_step: Option<u64>,
@@ -73,9 +86,6 @@ pub fn interpret_arguments(args: Vec<String>) -> Result<CLIArguments, CLIArgumen
     Ok(CLIArguments { target_number, save_step, use_remote_files })
 }
 
-pub fn filepath(directory: &str, number: u64) -> String {
-    format!("{directory}/{number}/{number}.txt")
-}
 
 async fn read_file(file_path: &str, remote: bool) -> Option<String> {
     if remote {
@@ -85,9 +95,10 @@ async fn read_file(file_path: &str, remote: bool) -> Option<String> {
     }
 }
 
-pub async fn get_closest_calculated_number(number: u64, directory: &str, use_remote_files: bool) -> Option<(u64, Integer)> {
+pub async fn get_closest_calculated_number(number: u64, use_remote_files: bool) -> Option<(u64, Integer)> {
+    let path = factorials_path(use_remote_files);
     let calculated_nums: Vec<u64> =
-        read_file(&format!("{directory}/factorials/factorials.txt"), use_remote_files).await?
+        read_file(path, use_remote_files).await?
         .split('\n')
         .filter_map(|str| str.parse::<u64>().ok())
         .collect();
@@ -101,7 +112,7 @@ pub async fn get_closest_calculated_number(number: u64, directory: &str, use_rem
     let Some(closest_calculated_num) = closest_calculated_num else { return None; };
 
     let factorial = Integer::from_str_radix(
-        &read_file(&filepath(directory, closest_calculated_num), use_remote_files).await?,
+        &read_file(&factorial_path(closest_calculated_num), use_remote_files).await?,
         36
     ).ok()?;
 
@@ -109,20 +120,30 @@ pub async fn get_closest_calculated_number(number: u64, directory: &str, use_rem
 }
 
 
-pub fn save_factorial_to_local(number: u64, factorial: &Integer, directory: &str) -> std::io::Result<()> {
-    let file_path = &filepath(directory, number);
-    local_files_handler::create_file(Path::new(file_path), &factorial.to_string_radix(36))
+pub fn save_factorial_to_local(number: u64, factorial: &Integer) -> std::io::Result<()> {
+    let file_path = &factorial_path(number);
+    let mut factorials = local_files_handler::read_file(Path::new(LOCAL_FACTORIALS_PATH))?;
+    factorials += &format!("\n{number}");
+    local_files_handler::write_file(Path::new(file_path), &factorial.to_string_radix(36))?;
+    local_files_handler::write_file(Path::new(REMOTE_FACTORIALS_PATH), &factorials)?;
+
+    Ok(())
 }
 
-pub fn save_factorial_to_remote(number: u64, factorial: &Integer, directory: &str) -> Result<(), remote_files_handler::RemoteError> {
-    let file_path = &filepath(directory, number);
-    remote_files_handler::create_file(file_path, &factorial.to_string_radix(36))
+pub async fn save_factorial_to_remote(number: u64, factorial: &Integer) -> Result<(), remote_files_handler::RemoteError> {
+    let file_path = &factorial_path(number);
+    let mut factorials = remote_files_handler::read_file(&REMOTE_FACTORIALS_PATH).await?;
+    factorials += &format!("\n{number}");
+    remote_files_handler::write_file(file_path, &factorial.to_string_radix(36))?;
+    remote_files_handler::write_file(REMOTE_FACTORIALS_PATH, &factorials)?;
+    
+    Ok(())
 }
 
-pub fn save_factorial(number: u64, factorial: &Integer, directory: &str, remote: bool) -> bool {
+pub async fn save_factorial(number: u64, factorial: &Integer, remote: bool) -> bool {
     if remote {
-        save_factorial_to_remote(number, factorial, directory).is_ok()
+        save_factorial_to_remote(number, factorial).await.is_ok()
     } else {
-        save_factorial_to_local(number, factorial, directory).is_ok()
+        save_factorial_to_local(number, factorial).is_ok()
     }
 }

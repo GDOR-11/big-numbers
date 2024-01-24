@@ -18,7 +18,7 @@ pub async fn read_file(file_path: &str) -> Result<String, RemoteError> {
     .text().await
     .map_err(|error| RemoteError::GithubRequestError(error))
 }
-pub fn create_file(file_path: &str, file_content: &str) -> Result<(), RemoteError> {
+pub fn write_file(file_path: &str, file_content: &str) -> Result<(), RemoteError> {
     if Command::new("git")
         .args(["log", "--branches", "--not", "--remotes"])
         .output()
@@ -27,7 +27,7 @@ pub fn create_file(file_path: &str, file_content: &str) -> Result<(), RemoteErro
     {
         return Err(RemoteError::WorkingTreeNotClean);
     }
-    local_files_handler::create_file(Path::new(file_path), file_content)
+    local_files_handler::write_file(Path::new(file_path), file_content)
         .map_err(|error| RemoteError::SaveError(error))?;
 
     // git reset
@@ -49,7 +49,7 @@ pub fn create_file(file_path: &str, file_content: &str) -> Result<(), RemoteErro
         .status()
         .map_err(|error| RemoteError::GitExecutionError(error))?;
     Command::new("git")
-        .args(["commit", "-m", "\"Adding files automatically\""])
+        .args(["commit", "-m", "Adding files automatically"])
         .stdout(std::process::Stdio::null())
         .status()
         .map_err(|error| RemoteError::GitExecutionError(error))?;
