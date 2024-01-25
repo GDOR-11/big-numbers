@@ -135,6 +135,7 @@ pub async fn save_factorial_to_remote(number: u64, factorial: &Integer) -> Resul
     let file_path = &factorial_path(number);
 
     let mut factorials = remote_files_handler::read_file(&REMOTE_FACTORIALS_PATH).await?;
+    println!("\n\n{factorials}\n\n");
     factorials.push_str(&format!("\n{number}"));
 
     remote_files_handler::write_file(file_path, &factorial.to_string_radix(36))?;

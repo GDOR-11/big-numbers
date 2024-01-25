@@ -2,7 +2,9 @@ use crate::local_files_handler;
 use reqwest;
 use std::path::Path;
 use std::process::Command;
+use std::time::SystemTime;
 
+#[derive(Debug)]
 pub enum RemoteError {
     WorkingTreeNotClean,
     SaveError(std::io::Error),
@@ -11,8 +13,10 @@ pub enum RemoteError {
 }
 
 pub async fn read_file(file_path: &str) -> Result<String, RemoteError> {
+    let now = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap();
+    println!("{}", format!("https://raw.githubusercontent.com/GDOR-11/factorial-calculator/main/{file_path}?token={:?}", now));
     reqwest::get(
-        format!("https://raw.githubusercontent.com/GDOR-11/factorial-calculator/main/{file_path}")
+        format!("https://raw.githubusercontent.com/GDOR-11/factorial-calculator/main/{file_path}?token={:?}", now)
     ).await
     .map_err(|error| RemoteError::GithubRequestError(error))?
     .text().await
