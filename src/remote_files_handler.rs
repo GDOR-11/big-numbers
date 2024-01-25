@@ -13,7 +13,9 @@ pub enum RemoteError {
 }
 
 pub async fn read_file(file_path: &str) -> Result<String, RemoteError> {
-    let now = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap();
+    let now = SystemTime::now()
+        .duration_since(SystemTime::UNIX_EPOCH)
+        .unwrap();
     reqwest::get(
         format!("https://raw.githubusercontent.com/GDOR-11/factorial-calculator/main/{file_path}?token={:?}", now)
     ).await
@@ -26,7 +28,9 @@ pub fn write_file(file_path: &str, file_content: &str) -> Result<(), RemoteError
         .args(["log", "--branches", "--not", "--remotes"])
         .output()
         .map_err(|error| RemoteError::GitExecutionError(error))?
-        .stdout.len() != 0
+        .stdout
+        .len()
+        != 0
     {
         return Err(RemoteError::WorkingTreeNotClean);
     }
@@ -43,11 +47,7 @@ pub fn write_file(file_path: &str, file_content: &str) -> Result<(), RemoteError
         .status()
         .map_err(|error| RemoteError::GitExecutionError(error))?;
     Command::new("git")
-        .args([
-            "add",
-            "--sparse",
-            file_path,
-        ])
+        .args(["add", "--sparse", file_path])
         .stdout(std::process::Stdio::null())
         .status()
         .map_err(|error| RemoteError::GitExecutionError(error))?;
@@ -62,8 +62,12 @@ pub fn write_file(file_path: &str, file_content: &str) -> Result<(), RemoteError
         .status()
         .map_err(|error| RemoteError::GitExecutionError(error))?;
 
-    local_files_handler::delete_file(Path::new(file_path))
-        .map_err(|error| RemoteError::LocalError(error))?;
+    local_files_handler::delete_path(
+        Path::new(file_path)
+            .parent()
+            .expect("dont mess with the code"),
+    )
+    .map_err(|error| RemoteError::LocalError(error))?;
 
     Ok(())
 }
