@@ -14,7 +14,6 @@ pub enum RemoteError {
 
 pub async fn read_file(file_path: &str) -> Result<String, RemoteError> {
     let now = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap();
-    println!("{}", format!("https://raw.githubusercontent.com/GDOR-11/factorial-calculator/main/{file_path}?token={:?}", now));
     reqwest::get(
         format!("https://raw.githubusercontent.com/GDOR-11/factorial-calculator/main/{file_path}?token={:?}", now)
     ).await

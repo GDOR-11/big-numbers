@@ -146,7 +146,13 @@ pub async fn save_factorial_to_remote(number: u64, factorial: &Integer) -> Resul
 
 pub async fn save_factorial(number: u64, factorial: &Integer, remote: bool) -> bool {
     if remote {
-        save_factorial_to_remote(number, factorial).await.is_ok()
+        match save_factorial_to_remote(number, factorial).await {
+            Ok(_) => true,
+            Err(error) => {
+                println!("{:?}", error);
+                false
+            }
+        }
     } else {
         save_factorial_to_local(number, factorial).is_ok()
     }
