@@ -7,7 +7,7 @@ use std::time::SystemTime;
 #[derive(Debug)]
 pub enum RemoteError {
     WorkingTreeNotClean,
-    SaveError(std::io::Error),
+    LocalError(std::io::Error),
     GithubRequestError(reqwest::Error),
     GitExecutionError(std::io::Error),
 }
@@ -31,7 +31,7 @@ pub fn write_file(file_path: &str, file_content: &str) -> Result<(), RemoteError
         return Err(RemoteError::WorkingTreeNotClean);
     }
     local_files_handler::write_file(Path::new(file_path), file_content)
-        .map_err(|error| RemoteError::SaveError(error))?;
+        .map_err(|error| RemoteError::LocalError(error))?;
 
     // git reset
     // git add --sparse <file path>
@@ -61,5 +61,9 @@ pub fn write_file(file_path: &str, file_content: &str) -> Result<(), RemoteError
         .stderr(std::process::Stdio::null())
         .status()
         .map_err(|error| RemoteError::GitExecutionError(error))?;
+
+    local_files_handler::delete_file(Path::new(file_path))
+        .map_err(|error| RemoteError::LocalError(error))?;
+
     Ok(())
 }
