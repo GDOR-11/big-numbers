@@ -103,7 +103,7 @@ pub async fn save_factorial(number: u64, factorial: &Integer) -> Result<(), remo
         return Ok(());
     }
 
-    factorials.push_str(&format!("{number}"));
+    factorials.push_str(&format!("\n{number}"));
 
     remote_files_handler::write_file(file_path, &factorial.to_string_radix(36))?;
     remote_files_handler::write_file(FACTORIALS_LIST_PATH, &factorials)?;
