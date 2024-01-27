@@ -2,10 +2,10 @@
 ## USAGE
 
 If you are using the CLI executable directly:
-    factorial_calculator option1=value1 option2=value2 option3=value3 ...
+`factorial_calculator option1=value1 option2=value2 option3=value3 ...`
 
 If you are using `cargo`:
-    cargo run -- option1=value1 option2=value2 option3=value3 ...
+`cargo run -- option1=value1 option2=value2 option3=value3 ...`
 
 ## AVAIBLE OPTIONS
 
@@ -25,7 +25,7 @@ only 3000000, 4000000 and 5000000 will be saved.
 ## EXAMPLES
 
 The following will create remote files for 1000000, 2000000 and 3000000 if there are no ther precalculated factorials below 3000000:
-    factorial_calculator target=3000000 save-step=1000000
+`factorial_calculator target=3000000 save-step=1000000`
 
 The following will only create a remote file for 5000:
-    factorial_calculator target=5000
+`factorial_calculator target=5000`
