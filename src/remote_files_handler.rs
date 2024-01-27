@@ -112,6 +112,7 @@ pub fn write_file(file_path: &str, file_content: &str) -> Result<(), RemoteError
     
     Command::new("git")
         .args(["sparse-checkout", "reapply"])
+        .stdout(Stdio::null())
         .status()
         .map_err(|error| RemoteError::GitExecutionError(error))?;
 
