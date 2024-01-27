@@ -30,7 +30,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         if x % 10000 == 0 {
             progress_bar.set_position(x);
         }
-        if save_step.is_some_and(|save_step| x % save_step == 0) {
+        if save_step.is_some_and(|save_step| x % save_step == 0 && x != target) {
             save_factorial(x, &factorial).await.map_err(|error| error.to_string())?;
         }
     }

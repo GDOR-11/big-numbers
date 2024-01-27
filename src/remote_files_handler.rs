@@ -97,7 +97,7 @@ pub fn write_file(file_path: &str, file_content: &str) -> Result<(), RemoteError
         .map_err(|error| RemoteError::GitExecutionError(error))?;
     Command::new("git")
         .args(["push", "origin", "main"])
-        .stdout(Stdio::null())
+        .stderr(Stdio::null())
         .status()
         .map_err(|error| RemoteError::GitExecutionError(error))?;
 
