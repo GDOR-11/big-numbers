@@ -81,30 +81,26 @@ pub fn write_file(file_path: &str, file_content: &str) -> Result<(), RemoteError
     // rmdir <parent directory>
     // git sparse-checkout reapply
 
-    println!("here");
     Command::new("git")
         .arg("reset")
         .stdout(Stdio::null())
         .status()
         .map_err(|error| RemoteError::GitExecutionError(error))?;
-    println!("here");
     Command::new("git")
         .args(["add", "--sparse", file_path])
         .status()
         .map_err(|error| RemoteError::GitExecutionError(error))?;
-    println!("here");
     Command::new("git")
         .args(["commit", "-m", "Adding files automatically"])
         .stdout(Stdio::null())
         .status()
         .map_err(|error| RemoteError::GitExecutionError(error))?;
-    println!("here");
     Command::new("git")
         .args(["push", "origin", "main"])
+        .stdout(Stdio::null())
         .stderr(Stdio::null())
         .status()
         .map_err(|error| RemoteError::GitExecutionError(error))?;
-    println!("last here");
 
 
     fs::remove_file(file_path)
