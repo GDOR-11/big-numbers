@@ -1,29 +1,18 @@
-mod local_files_handler;
 mod remote_files_handler;
 
 use std::fmt;
 use std::fs;
-use std::path::Path;
 use rug::Integer;
 use termimad::MadSkin;
 
 pub fn factorial_path(number: u64) -> String {
     format!("factorials/{number}/{number}.txt")
 }
-pub const LOCAL_FACTORIALS_PATH: &str = "factorials/factorials/local.txt";
-pub const REMOTE_FACTORIALS_PATH: &str = "factorials/factorials/remote.txt";
-pub fn factorials_path(remote: bool) -> &'static str {
-    if remote {
-        REMOTE_FACTORIALS_PATH
-    } else {
-        LOCAL_FACTORIALS_PATH
-    }
-}
+pub const FACTORIALS_LIST_PATH: &str = "factorials/list/list.txt";
 
 pub struct CLIArguments {
     pub target_number: u64,
-    pub save_step: Option<u64>,
-    pub use_remote_files: bool
+    pub save_step: Option<u64>
 }
 pub enum CLIArgumentsError {
     InvalidSyntax(String),
@@ -37,8 +26,8 @@ impl CLIArgumentsError {
 impl fmt::Display for CLIArgumentsError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::InvalidSyntax(string) => write!(f, "Syntax error: {}", string),
-            Self::IncorrectArguments(string) => write!(f, "Arguments error: {}", string)
+            Self::InvalidSyntax(string) => write!(f, "Syntax error: {string}"),
+            Self::IncorrectArguments(string) => write!(f, "Arguments error: {string}")
         }
     }
 }
@@ -50,7 +39,7 @@ pub fn interpret_arguments(args: Vec<String>) -> Result<CLIArguments, CLIArgumen
         std::process::exit(0);
     }
 
-    let (mut target_number, mut save_step, mut use_remote_files) = (None, None, None);
+    let (mut target_number, mut save_step) = (None, None);
     for arg in args.split_at(1).1 {
         let Some((name, value)) = arg.split_once('=') else {
             return Err(CLIArgumentsError::invalid_syntax_default());
@@ -68,37 +57,20 @@ pub fn interpret_arguments(args: Vec<String>) -> Result<CLIArguments, CLIArgumen
                     return Err(CLIArgumentsError::IncorrectArguments(format!("save-step must be a non-negative integer less than or equal to {}", u64::MAX)))
                 }
             },
-            "use-remote-files" => {
-                use_remote_files = match value {
-                    "yes" | "true" | "easter egg :D" => Some(true),
-                    "no" | "false" => Some(false),
-                    _ => return Err(CLIArgumentsError::IncorrectArguments(format!("use-remote-files must be 'yes'/'true' or 'no'/'false'")))
-                }
-            },
             _ => return Err(CLIArgumentsError::IncorrectArguments(format!("Argument '{name}' does not exist")))
         }
     }
     let Some(target_number) = target_number else {
         return Err(CLIArgumentsError::IncorrectArguments(format!("target number is missing")));
     };
-    let use_remote_files = use_remote_files.unwrap_or(false);
 
-    Ok(CLIArguments { target_number, save_step, use_remote_files })
+    Ok(CLIArguments { target_number, save_step })
 }
 
 
-async fn read_file(file_path: &str, remote: bool) -> Option<String> {
-    if remote {
-        remote_files_handler::read_file(file_path).await.ok()
-    } else {
-        local_files_handler::read_file(Path::new(file_path)).ok()
-    }
-}
-
-pub async fn get_closest_calculated_number(number: u64, use_remote_files: bool) -> Option<(u64, Integer)> {
-    let path = factorials_path(use_remote_files);
+pub async fn get_closest_calculated_number(number: u64) -> Option<(u64, Integer)> {
     let calculated_nums: Vec<u64> =
-        read_file(path, use_remote_files).await?
+        remote_files_handler::read_file(FACTORIALS_LIST_PATH).await.ok()?
         .split('\n')
         .filter_map(|str| str.parse::<u64>().ok())
         .collect();
@@ -112,49 +84,29 @@ pub async fn get_closest_calculated_number(number: u64, use_remote_files: bool) 
     let Some(closest_calculated_num) = closest_calculated_num else { return None; };
 
     let factorial = Integer::from_str_radix(
-        &read_file(&factorial_path(closest_calculated_num), use_remote_files).await?,
+        &remote_files_handler::read_file(&factorial_path(closest_calculated_num)).await.ok()?,
         36
     ).ok()?;
 
     Some((closest_calculated_num, factorial))
 }
 
-
-pub fn save_factorial_to_local(number: u64, factorial: &Integer) -> std::io::Result<()> {
+pub async fn save_factorial(number: u64, factorial: &Integer) -> Result<(), remote_files_handler::RemoteError> {
     let file_path = &factorial_path(number);
 
-    let mut factorials = local_files_handler::read_file(Path::new(LOCAL_FACTORIALS_PATH))?;
-    factorials += &format!("\n{number}");
-    local_files_handler::write_file(Path::new(file_path), &factorial.to_string_radix(36))?;
-    local_files_handler::write_file(Path::new(REMOTE_FACTORIALS_PATH), &factorials)?;
-
-    Ok(())
-}
-
-pub async fn save_factorial_to_remote(number: u64, factorial: &Integer) -> Result<(), remote_files_handler::RemoteError> {
-    let file_path = &factorial_path(number);
-
-    let mut factorials = remote_files_handler::read_file(&REMOTE_FACTORIALS_PATH).await?;
-    if factorials.find(&number.to_string()).is_some() { return Ok(()); }
+    let mut factorials = remote_files_handler::read_file(&FACTORIALS_LIST_PATH).await?;
+    if factorials
+        .split('\n')
+        .find(|string| string == &number.to_string())
+        .is_some()
+    {
+        return Ok(());
+    }
 
     factorials.push_str(&format!("\n{number}"));
 
     remote_files_handler::write_file(file_path, &factorial.to_string_radix(36))?;
-    remote_files_handler::write_file(REMOTE_FACTORIALS_PATH, &factorials)?;
+    remote_files_handler::write_file(FACTORIALS_LIST_PATH, &factorials)?;
     
     Ok(())
-}
-
-pub async fn save_factorial(number: u64, factorial: &Integer, remote: bool) -> bool {
-    if remote {
-        match save_factorial_to_remote(number, factorial).await {
-            Ok(_) => true,
-            Err(error) => {
-                println!("{:?}", error);
-                false
-            }
-        }
-    } else {
-        save_factorial_to_local(number, factorial).is_ok()
-    }
 }
