@@ -21,6 +21,7 @@ async function get_factorial(number) {
     let factorial = 0n;
     let digit_significance = 1n;
     for(let i = buffer.length - 1;i >= 0;i--) {
+        if(i % 10000 == 0) console.log(i);
         factorial += BigInt(buffer[i]) * digit_significance;
         digit_significance *= 256n;
     }
