@@ -20,6 +20,7 @@ async function get_factorial(number) {
     // the main bottleneck is getting the buffer data and turning it into a BigInt
     let factorial = 0n;
     for(let i = 0;i < buffer.length;i++) {
+        if(i % 10000 == 0) console.log(i / buffer.length);
         factorial <<= 8n;
         factorial |= BigInt(buffer[i]);
     }
