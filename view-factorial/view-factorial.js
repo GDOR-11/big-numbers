@@ -16,12 +16,16 @@ async function get_factorial(number) {
     const array_buffer = await blob.arrayBuffer();
     const buffer = new Uint8Array(array_buffer);
 
+    console.log("got here");
+
     let factorial = 0n;
     let digit_significance = 1n;
     for(let i = buffer.length - 1;i >= 0;i--) {
         factorial += BigInt(buffer[i]) * digit_significance;
         digit_significance *= 256n;
     }
+
+    console.log("got here");
 
     return factorial.toString(base);
 }
