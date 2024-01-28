@@ -18,6 +18,8 @@ async function get_factorial(number) {
 
 
     // the main bottleneck is getting the buffer data and turning it into a BigInt
+    let start = performance.now();
+
     let factorial = 0n;
     let significance = 0n;
     for(let i = buffer.length - 1;i >= 0;i--) {
@@ -25,6 +27,8 @@ async function get_factorial(number) {
         factorial |= BigInt(buffer[i]) << significance;
         significance += 8n;
     }
+
+    console.log(performance.now() - start);
 
     return factorial.toString(base);
 }
