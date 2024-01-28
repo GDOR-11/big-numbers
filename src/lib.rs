@@ -6,7 +6,7 @@ use rug::Integer;
 use termimad::MadSkin;
 
 pub fn factorial_path(number: u64) -> String {
-    format!("factorials/{number}/{number}.txt")
+    format!("factorials/{number}/{number}.fctr")
 }
 pub const FACTORIALS_LIST_PATH: &str = "factorials/list/list.txt";
 
@@ -70,7 +70,9 @@ pub fn interpret_arguments(args: Vec<String>) -> Result<CLIArguments, CLIArgumen
 
 pub async fn get_closest_calculated_number(number: u64) -> Option<(u64, Integer)> {
     let calculated_nums: Vec<u64> =
-        remote_files_handler::read_file(FACTORIALS_LIST_PATH).await.ok()?
+        String::from_utf8(
+            remote_files_handler::read_file(FACTORIALS_LIST_PATH).await.ok()?
+        ).ok()?
         .split('\n')
         .filter_map(|str| str.parse::<u64>().ok())
         .collect();
@@ -83,10 +85,9 @@ pub async fn get_closest_calculated_number(number: u64) -> Option<(u64, Integer)
     }
     let Some(closest_calculated_num) = closest_calculated_num else { return None; };
 
-    let factorial = Integer::from_str_radix(
-        &remote_files_handler::read_file(&factorial_path(closest_calculated_num)).await.ok()?,
-        36
-    ).ok()?;
+    let base256 = &remote_files_handler::read_file(&factorial_path(closest_calculated_num)).await.ok()?;
+
+    let factorial = Integer::from_digits(base256, rug::integer::Order::Msf);
 
     Some((closest_calculated_num, factorial))
 }
@@ -94,8 +95,10 @@ pub async fn get_closest_calculated_number(number: u64) -> Option<(u64, Integer)
 pub async fn save_factorial(number: u64, factorial: &Integer) -> Result<(), remote_files_handler::RemoteError> {
     let file_path = &factorial_path(number);
 
-    let mut factorials = remote_files_handler::read_file(&FACTORIALS_LIST_PATH).await?;
-    if factorials
+    let mut factorials_list = String::from_utf8(
+        remote_files_handler::read_file(&FACTORIALS_LIST_PATH).await?
+    ).unwrap_or("".to_string());
+    if factorials_list
         .split('\n')
         .find(|string| string == &number.to_string())
         .is_some()
@@ -103,10 +106,12 @@ pub async fn save_factorial(number: u64, factorial: &Integer) -> Result<(), remo
         return Ok(());
     }
 
-    factorials.push_str(&format!("\n{number}"));
+    factorials_list.push_str(&format!("\n{number}"));
 
-    remote_files_handler::write_file(file_path, &factorial.to_string_radix(36))?;
-    remote_files_handler::write_file(FACTORIALS_LIST_PATH, &factorials)?;
+    let base256 = factorial.to_digits(rug::integer::Order::Msf);
+
+    remote_files_handler::write_file(file_path, &base256)?;
+    remote_files_handler::write_file(FACTORIALS_LIST_PATH, factorials_list.as_bytes())?;
     
     Ok(())
 }

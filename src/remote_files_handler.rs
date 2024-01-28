@@ -40,20 +40,22 @@ impl Error for RemoteError {
     }
 }
 
-pub async fn read_file(file_path: &str) -> Result<String, RemoteError> {
+pub async fn read_file(file_path: &str) -> Result<Vec<u8>, RemoteError> {
     // use the current time to generate a new token with every request
     let now = SystemTime::now()
         .duration_since(SystemTime::UNIX_EPOCH)
         .unwrap();
 
-    reqwest::get(
+    let bytes = reqwest::get(
         format!("https://raw.githubusercontent.com/GDOR-11/factorial-calculator/main/{file_path}?token={:?}", now)
     ).await
     .map_err(|error| RemoteError::GithubRequestError(error))?
-    .text().await
-    .map_err(|error| RemoteError::GithubRequestError(error))
+    .bytes().await
+    .map_err(|error| RemoteError::GithubRequestError(error))?;
+
+    Ok(Vec::from(bytes))
 }
-pub fn write_file(file_path: &str, file_content: &str) -> Result<(), RemoteError> {
+pub fn write_file(file_path: &str, file_content: &[u8]) -> Result<(), RemoteError> {
     // this won't work if there are unpushed commits,
     // git log --branches --not --remotes will check that for us
     if Command::new("git")
@@ -70,7 +72,7 @@ pub fn write_file(file_path: &str, file_content: &str) -> Result<(), RemoteError
             .map_err(|error| RemoteError::FileCreationError(error))?;
     }
     File::create(file_path)
-        .and_then(|mut file| file.write_all(file_content.as_bytes()))
+        .and_then(|mut file| file.write_all(file_content))
         .map_err(|error| RemoteError::FileCreationError(error))?;
 
     // git reset
