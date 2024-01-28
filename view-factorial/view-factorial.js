@@ -11,8 +11,8 @@ if(isNaN(number) || isNaN(base)) {
 document.title = `${number}!`;
 
 function tohex(num) {
-    return String.fromCharCode(num >> 4 + (num < 160 ? 48 : 87))
-        + String.fromCharCode(num & 15 + (num & 15 < 10 ? 48 : 87));
+    return String.fromCharCode((num >> 4) + (num < 160 ? 48 : 87))
+        + String.fromCharCode((num & 15) + ((num & 15) < 10 ? 48 : 87));
 }
 async function get_factorial(number) {
     const response = await fetch(`../factorials/${number}/${number}.fctr`);
