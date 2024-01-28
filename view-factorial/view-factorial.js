@@ -16,16 +16,13 @@ async function get_factorial(number) {
     const array_buffer = await blob.arrayBuffer();
     const buffer = new Uint8Array(array_buffer);
 
-    console.log("got here");
 
+    // the main bottleneck is getting the buffer data and turning it into a BigInt
     let factorial = 0n;
     for(let i = 0;i < buffer.length;i++) {
-        if(i % 10000 == 0) console.log(i / number);
         factorial <<= 8n;
-        factorial += BigInt(buffer[i]);
+        factorial |= BigInt(buffer[i]);
     }
-
-    console.log("got here");
 
     return factorial.toString(base);
 }
