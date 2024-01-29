@@ -2,7 +2,7 @@ import init_wasm, { base256_to_string } from "./pkg/view_factorial.js";
 
 const query_string = window.location.search;
 const query = query_string.slice(1).split("&").map(string => string.split("="));
-const number = parseInt(query.find(arg => arg[0] == "factorial")[1]);
+const number = parseInt(query.find(arg => arg[0] == "factorial")?.[1]);
 const base = parseInt(query.find(arg => arg[0] == "base")?.[1]) || 10;
 
 if(isNaN(number)) {
