@@ -15,7 +15,7 @@ document.title = `${number}!` + base == 10 ? "" : ` base ${base}`;
 const text_p = document.getElementById("factorial");
 async function update_text(text) {
     text_p.innerText = text;
-    await new Promise(r => setTimeout(r, 0));
+    await new Promise(r => setTimeout(r, 1000));
 }
 
 async function get_factorial(number, base) {
@@ -25,7 +25,9 @@ async function get_factorial(number, base) {
     const array_buffer = await blob.arrayBuffer();
     const base256 = new Uint8Array(array_buffer);
 
+    console.log("a");
     await update_text(`converting buffer to base ${base} string...`)
+    console.log("b");
     return base256_to_string(base256, base);
 }
 
