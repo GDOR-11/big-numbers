@@ -1,3 +1,5 @@
+import view_factorial from "./pkg/view_factorial";
+
 const query_string = window.location.search;
 const query = query_string.slice(1).split("&").map(string => string.split("="));
 const number = parseInt(query.find(arg => arg[0] == "factorial")[1]);
@@ -16,50 +18,18 @@ async function update_text(text) {
     await new Promise(r => setTimeout(r, 0));
 }
 
-// lol
-function u32_to_hex(num) {
-    return String.fromCharCode(
-        ((num >>> 28)     ) + (  num       < 2684354560 ? 48 : 87),
-        ((num >>> 24) & 15) + (((num >>> 24) & 15) < 10 ? 48 : 87),
-        ((num >>> 20) & 15) + (((num >>> 20) & 15) < 10 ? 48 : 87),
-        ((num >>> 16) & 15) + (((num >>> 16) & 15) < 10 ? 48 : 87),
-        ((num >>> 12) & 15) + (((num >>> 12) & 15) < 10 ? 48 : 87),
-        ((num >>>  8) & 15) + (((num >>>  8) & 15) < 10 ? 48 : 87),
-        ((num >>>  4) & 15) + (((num >>>  4) & 15) < 10 ? 48 : 87),
-        ((num       ) & 15) + (((num       ) & 15) < 10 ? 48 : 87)
-    );
-}
-function u8_to_hex(num) {
-    return String.fromCharCode(
-        (num >>> 4) + ( num      < 160 ? 48 : 87),
-        (num & 15)  + ((num & 15) < 10 ? 48 : 87)
-    );
-}
 async function get_factorial(number, base) {
     await update_text("fetching data...");
     const response = await fetch(`../factorials/${number}/${number}.fctr`);
     const blob = await response.blob();
     const array_buffer = await blob.arrayBuffer();
-    const data_view = new DataView(array_buffer);
+    const base256 = new Uint8Array(array_buffer);
 
-    await update_text("parsing buffer into hexadecimal string...");
-    let string = "0x";
-    let i = 0;
-    for(;i <= data_view.byteLength - 4;i += 4) {
-        string += u32_to_hex(data_view.getUint32(i));
-    }
-    for(;i < data_view.byteLength;i++) {
-        string += u8_to_hex(data_view.getUint8(i));
-    }
-
-    await update_text("parsing string into BigInt...");
-    const factorial = BigInt(string);
-
-    await update_text(`stringifying BigInt (base ${base})...`);
-    return factorial.toString(base);
+    await update_text(`converting buffer to base ${base} string...`)
+    return view_factorial.base256_to_string(base256, base);
 }
 
-get_factorial(number, base).then(async factorial => {
-    await update_text("displaying...");
-    text_p.innerText = factorial;
-}).catch(alert);
+const factorial = await get_factorial(number, base);
+
+await update_text("displaying...");
+text_p.innerText = factorial;
