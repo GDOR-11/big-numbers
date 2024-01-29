@@ -3,6 +3,10 @@ const query = query_string.slice(1).split("&").map(string => string.split("="));
 const number = parseInt(query.find(arg => arg[0] == "factorial")[1]);
 const base = parseInt(query.find(arg => arg[0] == "base")?.[1]) || 10;
 
+alert(query_string);
+alert(number);
+alert(base);
+
 if(isNaN(number)) {
     alert("please provide a valid number to view the factorial of");
     throw "hello there, why are you peeking in the console";
@@ -51,4 +55,4 @@ async function get_factorial(number, base) {
 document.getElementById("factorial").innerText = "loading... (this might take a few seconds)";
 get_factorial(number, base).then(factorial => {
     document.getElementById("factorial").innerText = factorial;
-});
+}).catch(alert);
