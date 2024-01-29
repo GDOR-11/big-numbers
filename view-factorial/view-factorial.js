@@ -44,7 +44,7 @@ async function get_factorial(number, base) {
     let string = "0x";
     let i = 0;
     for(;i <= data_view.byteLength - 4;i += 4) {
-        if(i % 20000 == 0) alert(i / data_view.byteLength);
+        if(i % 50000 == 0) alert(i / data_view.byteLength);
         string += u32_to_hex(data_view.getUint32(i));
     }
     for(;i < data_view.byteLength;i++) {
