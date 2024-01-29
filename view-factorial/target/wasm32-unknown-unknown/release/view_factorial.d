@@ -1,0 +1,1 @@
+/Users/gabrielramalho/Desktop/factorial-calculator/view-factorial/target/wasm32-unknown-unknown/release/view_factorial.wasm: /Users/gabrielramalho/Desktop/factorial-calculator/view-factorial/src/lib.rs

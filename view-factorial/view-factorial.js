@@ -23,12 +23,10 @@ async function get_factorial(number, base) {
     const response = await fetch(`../factorials/${number}/${number}.fctr`);
     const blob = await response.blob();
     const array_buffer = await blob.arrayBuffer();
-    const base256 = new Uint8Array(array_buffer);
+    const base256_array = new Uint8Array(array_buffer);
 
-    console.log("a");
-    await update_text(`converting buffer to base ${base} string...`)
-    console.log("b");
-    return base256_to_string(base256, base);
+    await update_text(`converting base 256 buffer to base ${base} string...`)
+    return base256_to_string(base256_array, base);
 }
 
 await update_text("initializing assembly...");
