@@ -14,6 +14,8 @@ if(isNaN(number)) {
 
 document.title = `${number}!` + base == 10 ? "" : ` base ${base}`;
 
+const text_p = document.getElementById("factorial");
+
 // lol
 function u32_to_hex(num) {
     return String.fromCharCode(
@@ -34,34 +36,30 @@ function u8_to_hex(num) {
     );
 }
 async function get_factorial(number, base) {
+    text_p.innerText = "fetching data...";
     const response = await fetch(`../factorials/${number}/${number}.fctr`);
     const blob = await response.blob();
     const array_buffer = await blob.arrayBuffer();
     const data_view = new DataView(array_buffer);
 
-    alert("got here");
-
+    text_p.innerText = "parsing buffer into hexadecimal string...";
     let string = "0x";
     let i = 0;
     for(;i <= data_view.byteLength - 4;i += 4) {
-        if(i % 300000 == 0) alert(i / data_view.byteLength);
         string += u32_to_hex(data_view.getUint32(i));
     }
     for(;i < data_view.byteLength;i++) {
         string += u8_to_hex(data_view.getUint8(i));
     }
-    
-    alert("got here")
 
+    text_p.innerText = "parsing string into BigInt...";
     const factorial = BigInt(string);
 
-    alert("last got here")
-
+    text_p.innerText = `stringifying BigInt (base ${base})...`;
     return factorial.toString(base);
 }
 
-document.getElementById("factorial").innerText = "loading... (this might take a few seconds)";
 get_factorial(number, base).then(factorial => {
-    alert("displaying...");
-    document.getElementById("factorial").innerText = factorial;
+    text_p.innerText = "displaying...";
+    text_p.innerText = factorial;
 }).catch(alert);
