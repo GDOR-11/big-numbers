@@ -1,4 +1,8 @@
 #factorial {
-    word-wrap: break-word;
+    white-space: normal;
+    margin: 0px;
+    width: 100vw;
+    max-width: 100vw;
+    word-break: break-all;
     font-family: 'Roboto Mono', monospace;
 }
