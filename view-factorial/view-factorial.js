@@ -1,4 +1,4 @@
-import view_factorial from "./pkg/view_factorial";
+import view_factorial from "./pkg/view_factorial.js";
 
 const query_string = window.location.search;
 const query = query_string.slice(1).split("&").map(string => string.split("="));
