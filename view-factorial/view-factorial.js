@@ -1,4 +1,4 @@
-import view_factorial from "./pkg/view_factorial.js";
+import { base256_to_string } from "./pkg/view_factorial.js";
 
 const query_string = window.location.search;
 const query = query_string.slice(1).split("&").map(string => string.split("="));
@@ -26,7 +26,7 @@ async function get_factorial(number, base) {
     const base256 = new Uint8Array(array_buffer);
 
     await update_text(`converting buffer to base ${base} string...`)
-    return view_factorial.base256_to_string(base256, base);
+    return base256_to_string(base256, base);
 }
 
 const factorial = await get_factorial(number, base);
