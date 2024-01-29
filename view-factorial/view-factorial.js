@@ -42,10 +42,15 @@ async function get_factorial(number, base) {
     const array_buffer = await blob.arrayBuffer();
     const data_view = new DataView(array_buffer);
 
-    await update_text("parsing buffer into hexadecimal string...");
     let string = "0x";
     let i = 0;
     for(;i <= data_view.byteLength - 4;i += 4) {
+        // if i % 2 ** 16 == 0 { ... }
+        if(i & (1 << 15) == 0) {
+            await update_text(`parsing buffer into hexadecimal string... (${
+                (100 * i / data_view.byteLength).toFixed(2).padStart(5, "0")
+            }%)`);
+        }
         string += u32_to_hex(data_view.getUint32(i));
     }
     for(;i < data_view.byteLength;i++) {
