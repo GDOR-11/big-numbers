@@ -1,4 +1,4 @@
-import { base256_to_string } from "./pkg/view_factorial.js";
+import init_wasm, { base256_to_string } from "./pkg/view_factorial.js";
 
 const query_string = window.location.search;
 const query = query_string.slice(1).split("&").map(string => string.split("="));
@@ -28,6 +28,9 @@ async function get_factorial(number, base) {
     await update_text(`converting buffer to base ${base} string...`)
     return base256_to_string(base256, base);
 }
+
+await update_text("initializing assembly...");
+await init_wasm();
 
 const factorial = await get_factorial(number, base);
 
