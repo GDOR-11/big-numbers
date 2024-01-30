@@ -10,7 +10,7 @@ if(isNaN(number)) {
     throw "hello there, why are you peeking in the console";
 }
 
-document.title = `${number}!` + base == 10 ? "" : ` base ${base}`;
+document.title = `${number}!` + (base == 10 ? "" : ` base ${base}`);
 
 const text_p = document.getElementById("factorial");
 async function update_text(text) {
