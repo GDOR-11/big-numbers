@@ -40,7 +40,8 @@ pub unsafe fn base256_to_string(base256: &mut [u32], base: u32) -> String {
 
     alert(&format!("{digit_groups}"));
 
-    for _ in 0..base256.len() * 32 {
+    for i in 0..base256.len() * 32 {
+        if i % 100000 == 0 { alert(&format!("{}", i as f64 / base256.len() as f64 / 32f64)); }
         shift_slices_left(&mut digits, base256);
 
         // there are 8 digits in each digit group
