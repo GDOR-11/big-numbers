@@ -34,14 +34,25 @@ fn shift_slices_left(left: &mut [u32], right: &mut [u32]) {
     alert("finished mapping from digit to ASCII representation");
     String::from_utf8_unchecked(custom_base)
 }*/
-pub unsafe fn base256_to_string(base256: &mut [u32], base: u32) -> String {
-    let digit_groups = (32 * base256.len()).div_ceil(3).div_ceil(8);
+pub unsafe fn base256_to_string(base256: &mut [u8], base: u32) -> String {
+    let byte_length = base256.len();
+
+    alert("converting from u8 to u32...");
+
+    let base256 = unsafe {
+        std::slice::from_raw_parts_mut(
+            base256.as_mut_ptr() as *mut u32,
+            byte_length.div_ceil(8)
+        )
+    };
+
+    let digit_groups = (8 * byte_length).div_ceil(3).div_ceil(8);
     let mut digits = vec![0; digit_groups];
 
     alert(&format!("{digit_groups}"));
 
-    for i in 0..base256.len() * 32 {
-        if i % 100000 == 0 { alert(&format!("{}", i as f64 / base256.len() as f64 / 32f64)); }
+    for i in 0..byte_length * 8 {
+        if i % 100000 == 0 { alert(&format!("{}", i as f64 / byte_length as f64 / 8.0)); }
         shift_slices_left(&mut digits, base256);
 
         // there are 8 digits in each digit group
