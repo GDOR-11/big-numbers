@@ -1,11 +1,11 @@
 /* tslint:disable */
 /* eslint-disable */
 /**
-* @param {Uint32Array} base256
+* @param {Uint8Array} base256
 * @param {number} base
 * @returns {string}
 */
-export function base256_to_string(base256: Uint32Array, base: number): string;
+export function base256_to_string(base256: Uint8Array, base: number): string;
 
 export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembly.Module;
 

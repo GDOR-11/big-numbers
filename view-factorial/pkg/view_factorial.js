@@ -43,20 +43,11 @@ function getStringFromWasm0(ptr, len) {
     return cachedTextDecoder.decode(getUint8Memory0().subarray(ptr, ptr + len));
 }
 
-let cachedUint32Memory0 = null;
-
-function getUint32Memory0() {
-    if (cachedUint32Memory0 === null || cachedUint32Memory0.byteLength === 0) {
-        cachedUint32Memory0 = new Uint32Array(wasm.memory.buffer);
-    }
-    return cachedUint32Memory0;
-}
-
 let WASM_VECTOR_LEN = 0;
 
-function passArray32ToWasm0(arg, malloc) {
-    const ptr = malloc(arg.length * 4, 4) >>> 0;
-    getUint32Memory0().set(arg, ptr / 4);
+function passArray8ToWasm0(arg, malloc) {
+    const ptr = malloc(arg.length * 1, 1) >>> 0;
+    getUint8Memory0().set(arg, ptr / 1);
     WASM_VECTOR_LEN = arg.length;
     return ptr;
 }
@@ -79,7 +70,7 @@ function getInt32Memory0() {
     return cachedInt32Memory0;
 }
 /**
-* @param {Uint32Array} base256
+* @param {Uint8Array} base256
 * @param {number} base
 * @returns {string}
 */
@@ -88,7 +79,7 @@ export function base256_to_string(base256, base) {
     let deferred2_1;
     try {
         const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-        var ptr0 = passArray32ToWasm0(base256, wasm.__wbindgen_malloc);
+        var ptr0 = passArray8ToWasm0(base256, wasm.__wbindgen_malloc);
         var len0 = WASM_VECTOR_LEN;
         wasm.base256_to_string(retptr, ptr0, len0, addHeapObject(base256), base);
         var r0 = getInt32Memory0()[retptr / 4 + 0];
@@ -157,7 +148,6 @@ function __wbg_finalize_init(instance, module) {
     wasm = instance.exports;
     __wbg_init.__wbindgen_wasm_module = module;
     cachedInt32Memory0 = null;
-    cachedUint32Memory0 = null;
     cachedUint8Memory0 = null;
 
 
