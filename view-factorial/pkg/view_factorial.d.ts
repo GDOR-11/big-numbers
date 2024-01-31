@@ -1,17 +1,17 @@
 /* tslint:disable */
 /* eslint-disable */
 /**
-* @param {Uint8Array} base256
+* @param {Uint32Array} base256
 * @param {number} base
 * @returns {string}
 */
-export function base256_to_string(base256: Uint8Array, base: number): string;
+export function base256_to_string(base256: Uint32Array, base: number): string;
 
 export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembly.Module;
 
 export interface InitOutput {
   readonly memory: WebAssembly.Memory;
-  readonly base256_to_string: (a: number, b: number, c: number, d: number) => void;
+  readonly base256_to_string: (a: number, b: number, c: number, d: number, e: number) => void;
   readonly __wbindgen_add_to_stack_pointer: (a: number) => number;
   readonly __wbindgen_malloc: (a: number, b: number) => number;
   readonly __wbindgen_free: (a: number, b: number, c: number) => void;
