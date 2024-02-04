@@ -13,5 +13,4 @@ opt-level = 3
 crate-type = ["cdylib"]
 
 [dependencies]
-convert-base = "1.1.2"
 wasm-bindgen = "0.2.90"

@@ -71,17 +71,16 @@ function getInt32Memory0() {
 }
 /**
 * @param {Uint8Array} base256
-* @param {number} base
 * @returns {string}
 */
-export function base256_to_string(base256, base) {
+export function base256_to_string(base256) {
     let deferred2_0;
     let deferred2_1;
     try {
         const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
         var ptr0 = passArray8ToWasm0(base256, wasm.__wbindgen_malloc);
         var len0 = WASM_VECTOR_LEN;
-        wasm.base256_to_string(retptr, ptr0, len0, addHeapObject(base256), base);
+        wasm.base256_to_string(retptr, ptr0, len0, addHeapObject(base256));
         var r0 = getInt32Memory0()[retptr / 4 + 0];
         var r1 = getInt32Memory0()[retptr / 4 + 1];
         deferred2_0 = r0;
