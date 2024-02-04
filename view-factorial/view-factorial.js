@@ -3,7 +3,6 @@ import init_wasm, { base256_to_string } from "./pkg/view_factorial.js";
 const query_string = window.location.search;
 const query = query_string.slice(1).split("&").map(string => string.split("="));
 const number = parseInt(query.find(arg => arg[0] == "factorial")?.[1]);
-const base = parseInt(query.find(arg => arg[0] == "base")?.[1]) || 10;
 
 if(isNaN(number)) {
     alert("please provide a valid number to view the factorial of");
@@ -18,7 +17,7 @@ async function update_text(text) {
     await new Promise(r => setTimeout(r, 1000));
 }
 
-async function get_factorial(number, base) {
+async function get_factorial(number) {
     await update_text("fetching data...");
     const response = await fetch(`../factorials/${number}/${number}.fctr`);
     const blob = await response.blob();
@@ -27,14 +26,13 @@ async function get_factorial(number, base) {
     await update_text("processing data...");
     const base256_array = new Uint8Array(array_buffer);
 
-    await update_text(`converting base 256 buffer to base ${base} string...`)
-    return base256_to_string(base256_array, base);
+    return base256_to_string(base256_array);
 }
 
 await update_text("initializing webassembly...");
 await init_wasm();
 
-const factorial = await get_factorial(number, base);
+const factorial = await get_factorial(number);
 
 await update_text("displaying...");
 text_p.innerText = factorial;
