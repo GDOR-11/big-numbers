@@ -62,11 +62,11 @@ async function get_factorial(number, base) {
         let bigint = BigInt(str);
 
         await update_text(`converting bigint into base ${base} string...`);
-        return bigint.toLocaleString(base);
+        return bigint.toString(base);
     }
 }
 
-const factorial = await get_factorial(number);
+const factorial = await get_factorial(number, base);
 
 await update_text("displaying...");
 text_p.innerText = factorial;
