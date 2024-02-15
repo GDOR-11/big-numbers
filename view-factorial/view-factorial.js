@@ -36,19 +36,19 @@ function u8_to_hex(num) {
     );
 }
 
-function estimate_bigint_toString_time(bit_length) {
-    // converting this to a string takes around 80ms on my computer,
-    // it shouldn't take over a few seconds on lower-end devices
-    let small_bigint = 1n << (1n << 20n);
+// be aware that this takes a few seconds to run
+function estimate_bigint_toString_time(bit_length, base) {
+    let time = 0;
+    let small_bit_length = 1;
+    for(;time < 1000;small_bit_length <<= 1) {
+        let small_bigint = 1n << BigInt(small_bit_length);
+        let start = performance.now();
+        small_bigint.toString(base);
+        time = performance.now() - start;
+    }
 
-    // measure the time it took to convert to a string
-    let begin = performance.now();
-    small_bigint.toString();
-    let small_time = performance.now() - begin;
-
-    // 14536350 = (1 << 20) * Math.log(1 << 20)
     // this estimation can be done because BigInt.prototype.toString runs in O(nlog n) time according to my measurements
-    return small_time * 14536350 / (bit_length * Math.log(bit_length));
+    return time * (bit_length * Math.log(bit_length)) / (small_bit_length * Math.log(small_bit_length));
 }
 
 async function get_factorial(number, base) {
@@ -77,7 +77,7 @@ async function get_factorial(number, base) {
         let bigint = BigInt(str);
 
         await update_text("measuring device performance...");
-        let estimated_time = estimate_bigint_toString_time((str.length - 2) * 4);
+        let estimated_time = estimate_bigint_toString_time((str.length - 2) * 4, base);
 
         await update_text(`converting bigint into base ${base} string...\nestimated time: ${Math.round(estimated_time) / 1000}s`);
         return bigint.toString(base);
