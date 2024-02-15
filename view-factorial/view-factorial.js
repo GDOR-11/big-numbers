@@ -60,8 +60,21 @@ async function get_factorial(number, base) {
     } else {
         await update_text("parsing string into BigInt...");
         let bigint = BigInt(str);
+        let bit_length = (str.length - 2) * 4;
 
-        await update_text(`converting bigint into base ${base} string...`);
+        await update_text("measuring device performance...");
+        // believe me, this is very small compared to bigint itself
+        let small_bigint = 1n << (1n << 20n);
+
+        let begin = performance.now();
+        small_bigint.toString();
+        let small_time = performance.now() - begin;
+
+        // 14536350 = (1 << 20) * Math.log(1 << 20)
+        // this estimation can be done because BigInt.prototype.toString runs in O(nlog n) time according to my measurements
+        let estimated_total_time = small_time * 14536350 / (bit_length * Math.log(bit_length));
+
+        await update_text(`converting bigint into base ${base} string...\nestimated time: ${Math.round(estimated_total_time) / 1000}s`);
         return bigint.toString(base);
     }
 }
