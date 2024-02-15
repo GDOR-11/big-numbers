@@ -1,15 +1,14 @@
-import init_wasm, { base256_to_string } from "./pkg/view_factorial.js";
-
 const query_string = window.location.search;
 const query = query_string.slice(1).split("&").map(string => string.split("="));
 const number = parseInt(query.find(arg => arg[0] == "factorial")?.[1]);
+const base = parseInt(query.find(arg => arg[0] == "base")?.[1]) || 10;
 
 if(isNaN(number)) {
     alert("please provide a valid number to view the factorial of");
     throw "hello there, why are you peeking in the console";
 }
 
-document.title = `${number}!`;
+document.title = `${number}!` + (base == 10 ? `` : ` base ${base}`);
 
 const text_p = document.getElementById("factorial");
 async function update_text(text) {
@@ -17,20 +16,55 @@ async function update_text(text) {
     await new Promise(r => setTimeout(r, 1000));
 }
 
-async function get_factorial(number) {
+// lol
+function u32_to_hex(num) {
+    return String.fromCharCode(
+        ((num >>> 28)     ) + (  num       < 2684354560 ? 48 : 87),
+        ((num >>> 24) & 15) + (((num >>> 24) & 15) < 10 ? 48 : 87),
+        ((num >>> 20) & 15) + (((num >>> 20) & 15) < 10 ? 48 : 87),
+        ((num >>> 16) & 15) + (((num >>> 16) & 15) < 10 ? 48 : 87),
+        ((num >>> 12) & 15) + (((num >>> 12) & 15) < 10 ? 48 : 87),
+        ((num >>>  8) & 15) + (((num >>>  8) & 15) < 10 ? 48 : 87),
+        ((num >>>  4) & 15) + (((num >>>  4) & 15) < 10 ? 48 : 87),
+        ((num       ) & 15) + (((num       ) & 15) < 10 ? 48 : 87)
+    );
+}
+function u8_to_hex(num) {
+    return String.fromCharCode(
+        (num >>> 4) + ( num      < 160 ? 48 : 87),
+        (num & 15)  + ((num & 15) < 10 ? 48 : 87)
+    );
+}
+
+async function get_factorial(number, base) {
     await update_text("fetching data...");
     const response = await fetch(`../factorials/${number}/${number}.fctr`);
     const blob = await response.blob();
     const array_buffer = await blob.arrayBuffer();
+    const data_view = new DataView(array_buffer);
 
-    await update_text("processing data...");
-    const base256_array = new Uint8Array(array_buffer);
+    await update_text("converting buffer to string...");
 
-    return base256_to_string(base256_array);
+    let str = "0x";
+
+    let offset = 0;
+    for(;offset < data_view.byteLength - 3;offset += 4) {
+        str += u32_to_hex(data_view.getUint32(offset));
+    }
+    for(;offset < data_view.byteLength;offset++) {
+        str += u8_to_hex(data_view.getUint8(offset));
+    }
+
+    if(base == 16) {
+        return str.slice(2);
+    } else {
+        await update_text("parsing string into BigInt...");
+        let bigint = BigInt(str);
+
+        await update_text(`converting bigint into base ${base} string...`);
+        return bigint.toLocaleString(base);
+    }
 }
-
-await update_text("initializing webassembly...");
-await init_wasm();
 
 const factorial = await get_factorial(number);
 
