@@ -1,7 +1,11 @@
 [package]
-name = "factorial_calculator"
+name = "big-numbers"
 version = "0.1.0"
 edition = "2021"
+
+[[bin]]
+name = "factorial"
+path = "src/factorial/main.rs"
 
 [dependencies]
 indicatif = "0.17.7"

@@ -51,15 +51,10 @@ function estimate_bigint_toString_time(bit_length, base) {
     return time * (bit_length * Math.log(bit_length)) / (small_bit_length * Math.log(small_bit_length));
 }
 
-async function get_factorial(number, base) {
-    await update_text("fetching data...");
-    const response = await fetch(`../factorials/${number}/${number}.fctr`);
-    const blob = await response.blob();
-    const array_buffer = await blob.arrayBuffer();
+async function arraybuffer_to_string(array_buffer, base) {
     const data_view = new DataView(array_buffer);
 
     await update_text("converting buffer to string...");
-
     let str = "0x";
 
     let offset = 0;
@@ -81,6 +76,21 @@ async function get_factorial(number, base) {
 
         await update_text(`converting bigint into base ${base} string...\nestimated time: ${Math.round(estimated_time) / 1000}s`);
         return bigint.toString(base);
+    }
+}
+
+async function get_factorial(number, base) {
+    await update_text("fetching data...");
+    try {
+        const response = await fetch(`../binary-bigints/${number}/${number}.bigint`);
+        const blob = await response.blob();
+        const array_buffer = await blob.arrayBuffer();
+        return arraybuffer_to_string(array_buffer, base);
+    } catch(err) {
+        const response = await fetch(`../decimal-bigints/${number}/${number}.txt`);
+        return await response.text();
+    } finally {
+        await update_text("number not found, check if you haven't made a typo");
     }
 }
 
