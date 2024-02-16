@@ -52,7 +52,7 @@ function estimate_bigint_toString_time(bit_length, base) {
 
 async function binary_number_to_string(number, base) {
     let response = await fetch(`../binary-bigints/${number}/${number}.bigint`);
-    if(!response.ok) throw "";
+    if(!response.ok) return "";
     let blob = await response.blob(); response = null;
     let array_buffer = await blob.arrayBuffer(); blob = null;
     let data_view = new DataView(array_buffer); array_buffer = null;
@@ -87,7 +87,7 @@ async function binary_number_to_string(number, base) {
 
 async function decimal_number_to_string(number, base) {
     let response = await fetch(`../decimal-bigints/${number}/${number}.txt`);
-    if(!response.ok) throw "";
+    if(!response.ok) return "";
     let text = response.text(); response = null;
 
     // it makes no sense to do nothing
@@ -103,16 +103,15 @@ async function decimal_number_to_string(number, base) {
 
 async function get_number(number, base) {
     await update_text("fetching data...");
-    try {
-        return await binary_number_to_string(number, base);
-    } catch(err) {
-        return await decimal_number_to_string(number, base);
-    } finally {
-        await update_text("number not found, check if you haven't made a typo");
-    }
+    let string = binary_number_to_string(number, base);
+    if(string == "") string = decimal_number_to_string(number, base);
+    if(string == "") await update_text("number not found, check if you haven't made a typo");
+    return string;
 }
 
 const big_number = await get_number(number, base);
 
-await update_text("displaying...");
-text_p.innerText = big_number;
+if(big_number != "") {
+    await update_text("displaying...");
+    text_p.innerText = big_number;
+}
