@@ -1,117 +1,151 @@
-mod remote_files_handler;
+use reqwest;
+use std::fs::{self, File};
+use std::io::Write;
+use std::path::Path;
+use std::process::{Command, Stdio};
+use std::time::SystemTime;
+use std::error::Error;
+use std::fmt::{self, Display};
+use rug;
 
-use std::fmt;
-use std::fs;
-use rug::Integer;
-use termimad::MadSkin;
+#[derive(Debug)]
+pub enum RemoteError {
+    WorkingTreeNotClean,
+    FileCreationError(std::io::Error),
+    FileDeletionError(std::io::Error),
+    GithubRequestError(reqwest::Error),
+    GitExecutionError(std::io::Error)
+}
 
-pub fn factorial_path(number: u64) -> String {
-    format!("factorials/{number}/{number}.fctr")
-}
-pub const FACTORIALS_LIST_PATH: &str = "factorials/list/list.txt";
-
-pub struct CLIArguments {
-    pub target_number: u64,
-    pub save_step: Option<u64>
-}
-pub enum CLIArgumentsError {
-    InvalidSyntax(String),
-    IncorrectArguments(String)
-}
-impl CLIArgumentsError {
-    fn invalid_syntax_default() -> Self {
-        Self::InvalidSyntax(String::from("Arguments must come in the form '<name>=<value>'"))
-    }
-}
-impl fmt::Display for CLIArgumentsError {
+impl Display for RemoteError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::InvalidSyntax(string) => write!(f, "Syntax error: {string}"),
-            Self::IncorrectArguments(string) => write!(f, "Arguments error: {string}")
+            Self::WorkingTreeNotClean => write!(f, "working tree not clean"),
+            Self::FileCreationError(error) => write!(f, "could not create local file ({error})"),
+            Self::FileDeletionError(error) => write!(f, "could not delete local file ({error})"),
+            Self::GithubRequestError(error) => write!(f, "could not get file data from github ({error})"),
+            Self::GitExecutionError(error) => write!(f, "could not use git ({error})")
         }
     }
 }
-pub fn interpret_arguments(args: Vec<String>) -> Result<CLIArguments, CLIArgumentsError> {
-    if args.get(1).is_some_and(|arg| arg == "--help" || arg == "-h") {
-        let text = fs::read_to_string("./help.md").unwrap_or("Help file not found, good luck figuring out how this works lmao".to_string());
-        let skin = MadSkin::default();
-        println!("{}", skin.term_text(&text));
-        std::process::exit(0);
-    }
 
-    let (mut target_number, mut save_step) = (None, None);
-    for arg in args.split_at(1).1 {
-        let Some((name, value)) = arg.split_once('=') else {
-            return Err(CLIArgumentsError::invalid_syntax_default());
-        };
-        match name {
-            "target" => {
-                target_number = value.parse::<u64>().ok();
-                if target_number == None {
-                    return Err(CLIArgumentsError::IncorrectArguments(format!("target must be a non-negative integer less than or equal to {}", u64::MAX)))
-                }
-            },
-            "save-step" => {
-                save_step = value.parse::<u64>().ok();
-                if save_step == None || save_step == Some(0) {
-                    return Err(CLIArgumentsError::IncorrectArguments(format!("save-step must be a non-negative integer less than or equal to {}", u64::MAX)))
-                }
-            },
-            _ => return Err(CLIArgumentsError::IncorrectArguments(format!("Argument '{name}' does not exist")))
+impl Error for RemoteError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        match self {
+            Self::WorkingTreeNotClean => None,
+            Self::FileCreationError(error) => Some(error),
+            Self::FileDeletionError(error) => Some(error),
+            Self::GithubRequestError(error) => Some(error),
+            Self::GitExecutionError(error) => Some(error)
         }
     }
-    let Some(target_number) = target_number else {
-        return Err(CLIArgumentsError::IncorrectArguments(format!("target number is missing")));
-    };
-
-    Ok(CLIArguments { target_number, save_step })
 }
 
 
-pub async fn get_closest_calculated_number(number: u64) -> Option<(u64, Integer)> {
-    let calculated_nums: Vec<u64> =
-        String::from_utf8(
-            remote_files_handler::read_file(FACTORIALS_LIST_PATH).await.ok()?
-        ).ok()?
-        .split('\n')
-        .filter_map(|str| str.parse::<u64>().ok())
-        .collect();
-
-    let mut closest_calculated_num = None;
-    for calculated_num in calculated_nums {
-        if calculated_num <= number && !closest_calculated_num.is_some_and(|num| calculated_num < num) {
-            closest_calculated_num = Some(calculated_num);
-        }
+pub fn number_filepath(number_title: &str, binary: bool) -> String {
+    if binary {
+        format!("binary-bigints/{number_title}/{number_title}.bigint")
+    } else {
+        format!("decimal-bigints/{number_title}/{number_title}.txt")
     }
-    let Some(closest_calculated_num) = closest_calculated_num else { return None; };
-
-    let base256 = &remote_files_handler::read_file(&factorial_path(closest_calculated_num)).await.ok()?;
-
-    let factorial = Integer::from_digits(base256, rug::integer::Order::Msf);
-
-    Some((closest_calculated_num, factorial))
 }
 
-pub async fn save_factorial(number: u64, factorial: &Integer) -> Result<(), remote_files_handler::RemoteError> {
-    let file_path = &factorial_path(number);
+pub async fn save_number(number_title: &str, number: &rug::Integer) -> Result<(), RemoteError> {
+    let digits = number.significant_bits() as f64 * 0.30103; // 0.30103 > log10(2),
+                                                             // therefore digits > actual digits
+    if digits > 52428800.0 {
+        let file_path = &number_filepath(number_title, true);
 
-    let mut factorials_list = String::from_utf8(
-        remote_files_handler::read_file(&FACTORIALS_LIST_PATH).await?
-    ).unwrap_or("".to_string());
-    if factorials_list
-        .split('\n')
-        .find(|string| string == &number.to_string())
-        .is_some()
+        let base256 = number.to_digits(rug::integer::Order::Msf);
+
+        write_file(file_path, &base256)?;
+    } else {
+        let file_path = &number_filepath(number_title, false);
+
+        write_file(file_path, number.to_string().as_bytes())?;
+    }
+
+    Ok(())
+}
+
+
+pub async fn read_file(file_path: &str) -> Result<Vec<u8>, RemoteError> {
+    // use the current time to generate a new token with every request
+    let now = SystemTime::now()
+        .duration_since(SystemTime::UNIX_EPOCH)
+        .unwrap();
+
+    let bytes = reqwest::get(
+        format!("https://raw.githubusercontent.com/GDOR-11/factorial-calculator/main/{file_path}?token={:?}", now)
+    ).await
+    .map_err(|error| RemoteError::GithubRequestError(error))?
+    .bytes().await
+    .map_err(|error| RemoteError::GithubRequestError(error))?;
+
+    Ok(Vec::from(bytes))
+}
+pub fn write_file(file_path: &str, file_content: &[u8]) -> Result<(), RemoteError> {
+    // this won't work if there are unpushed commits,
+    // git log --branches --not --remotes will check that for us
+    if Command::new("git")
+        .args(["log", "--branches", "--not", "--remotes"])
+        .output()
+        .map_err(|error| RemoteError::GitExecutionError(error))?
+        .stdout.len() != 0
     {
-        return Ok(());
+        return Err(RemoteError::WorkingTreeNotClean);
     }
 
-    factorials_list.push_str(&format!("\n{number}"));
+    if let Some(parent) = Path::new(file_path).parent() {
+        fs::create_dir_all(parent)
+            .map_err(|error| RemoteError::FileCreationError(error))?;
+    }
+    File::create(file_path)
+        .and_then(|mut file| file.write_all(file_content))
+        .map_err(|error| RemoteError::FileCreationError(error))?;
 
-    let base256 = factorial.to_digits(rug::integer::Order::Msf);
+    // git reset
+    // git add --sparse <file path>
+    // git commit -m "Adding files automatically"
+    // git push origin main
+    // rm <file path>
+    // rmdir <parent directory>
+    // git sparse-checkout reapply
 
-    remote_files_handler::write_file(file_path, &base256)?;
-    remote_files_handler::write_file(FACTORIALS_LIST_PATH, factorials_list.as_bytes())?;
+    Command::new("git")
+        .arg("reset")
+        .stdout(Stdio::null())
+        .status()
+        .map_err(|error| RemoteError::GitExecutionError(error))?;
+    Command::new("git")
+        .args(["add", "--sparse", file_path])
+        .status()
+        .map_err(|error| RemoteError::GitExecutionError(error))?;
+    Command::new("git")
+        .args(["commit", "-m", "Adding files automatically"])
+        .stdout(Stdio::null())
+        .status()
+        .map_err(|error| RemoteError::GitExecutionError(error))?;
+    Command::new("git")
+        .args(["push", "origin", "main"])
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .status()
+        .map_err(|error| RemoteError::GitExecutionError(error))?;
+
+
+    fs::remove_file(file_path)
+        .map_err(|error| RemoteError::FileDeletionError(error))?;
+    if let Some(parent) = Path::new(file_path).parent() {
+        let _ = fs::remove_dir(parent);
+    }
+
     
+    Command::new("git")
+        .args(["sparse-checkout", "reapply"])
+        .stdout(Stdio::null())
+        .status()
+        .map_err(|error| RemoteError::GitExecutionError(error))?;
+
     Ok(())
 }
