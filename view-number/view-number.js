@@ -52,6 +52,7 @@ function estimate_bigint_toString_time(bit_length, base) {
 
 async function binary_number_to_string(number, base) {
     let response = await fetch(`../binary-bigints/${number}/${number}.bigint`);
+    if(!response.ok) throw "";
     let blob = await response.blob(); response = null;
     let array_buffer = await blob.arrayBuffer(); blob = null;
     let data_view = new DataView(array_buffer); array_buffer = null;
@@ -86,6 +87,7 @@ async function binary_number_to_string(number, base) {
 
 async function decimal_number_to_string(number, base) {
     let response = await fetch(`../decimal-bigints/${number}/${number}.txt`);
+    if(!response.ok) throw "";
     let text = response.text(); response = null;
 
     // it makes no sense to do nothing
