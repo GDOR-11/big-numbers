@@ -103,8 +103,8 @@ async function decimal_number_to_string(number, base) {
 
 async function get_number(number, base) {
     await update_text("fetching data...");
-    let string = binary_number_to_string(number, base);
-    if(string == "") string = decimal_number_to_string(number, base);
+    let string = await binary_number_to_string(number, base);
+    if(string == "") string = await decimal_number_to_string(number, base);
     if(string == "") await update_text("number not found, check if you haven't made a typo");
     return string;
 }
