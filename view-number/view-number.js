@@ -51,10 +51,10 @@ function estimate_bigint_toString_time(bit_length, base) {
 }
 
 async function binary_number_to_string(number, base) {
-    const response = await fetch(`../binary-bigints/${number}/${number}.bigint`);
-    const blob = await response.blob(); response = null;
-    const array_buffer = await blob.arrayBuffer(); blob = null;
-    const data_view = new DataView(array_buffer); array_buffer = null;
+    let response = await fetch(`../binary-bigints/${number}/${number}.bigint`);
+    let blob = await response.blob(); response = null;
+    let array_buffer = await blob.arrayBuffer(); blob = null;
+    let data_view = new DataView(array_buffer); array_buffer = null;
 
     await update_text("converting buffer to string...");
     let string = "0x";
@@ -85,8 +85,8 @@ async function binary_number_to_string(number, base) {
 }
 
 async function decimal_number_to_string(number, base) {
-    const response = await fetch(`../decimal-bigints/${number}/${number}.txt`);
-    const text = response.text(); response = null;
+    let response = await fetch(`../decimal-bigints/${number}/${number}.txt`);
+    let text = response.text(); response = null;
 
     // it makes no sense to do nothing
     // this single line makes 90% of use cases a LOT more efficient
