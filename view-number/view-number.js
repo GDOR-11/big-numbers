@@ -42,7 +42,7 @@ async function binary_number_to_string(number, base) {
     let array_buffer = await blob.arrayBuffer(); blob = null;
     let data_view = new DataView(array_buffer); array_buffer = null;
 
-    await update_text("converting buffer to string...");
+    await update_text("converting buffer to hex string...");
     let string = "0x";
 
     let offset = 0;
@@ -58,6 +58,9 @@ async function binary_number_to_string(number, base) {
     if(base == 16) {
         return string.slice(2);
     } else {
+        await update_text("converting hex string into bigint...");
+        let bigint = BigInt(string);
+
         await update_text(`converting bigint into base ${base} string...`);
         return bigint.toString(base);
     }
