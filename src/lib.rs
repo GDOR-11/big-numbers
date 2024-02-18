@@ -53,21 +53,17 @@ pub fn number_filepath(number_title: &str, binary: bool) -> String {
 pub async fn save_number(number_title: &str, number: &rug::Integer) -> Result<(), RemoteError> {
     let digits = number.significant_bits() as f64 * 0.30103; // 0.30103 > log10(2),
                                                              // therefore digits > actual digits
-    if digits > 52428800.0 {
-        let file_path = &number_filepath(number_title, true);
-
-        let base256 = number.to_digits(rug::integer::Order::Msf);
-
-        write_file(file_path, &base256)?;
-    } else {
+    if digits <= 52428800.0 {
         let file_path = &number_filepath(number_title, false);
-
         write_file(file_path, number.to_string().as_bytes())?;
     }
 
+    let file_path = &number_filepath(number_title, true);
+    let base256 = number.to_digits(rug::integer::Order::Msf);
+    write_file(file_path, &base256)?;
+
     Ok(())
 }
-
 
 pub async fn read_file(file_path: &str) -> Result<Vec<u8>, RemoteError> {
     // use the current time to generate a new token with every request
