@@ -3,8 +3,8 @@ use std::fs;
 use termimad::MadSkin;
 
 pub struct CLIArguments {
-    pub target_number: u64,
-    pub save_step: Option<u64>
+    pub target_number: usize,
+    pub save_step: Option<usize>
 }
 pub enum CLIArgumentsError {
     InvalidSyntax(String),
@@ -38,15 +38,15 @@ pub fn interpret_arguments(args: Vec<String>) -> Result<CLIArguments, CLIArgumen
         };
         match name {
             "target" => {
-                target_number = value.parse::<u64>().ok();
+                target_number = value.parse().ok();
                 if target_number == None {
-                    return Err(CLIArgumentsError::IncorrectArguments(format!("target must be a non-negative integer less than or equal to {}", u64::MAX)))
+                    return Err(CLIArgumentsError::IncorrectArguments(format!("target must be a non-negative integer less than or equal to {}", usize::MAX)))
                 }
             },
             "save-step" => {
-                save_step = value.parse::<u64>().ok();
+                save_step = value.parse().ok();
                 if save_step == None || save_step == Some(0) {
-                    return Err(CLIArgumentsError::IncorrectArguments(format!("save-step must be a non-negative integer less than or equal to {}", u64::MAX)))
+                    return Err(CLIArgumentsError::IncorrectArguments(format!("save-step must be a non-negative integer less than or equal to {}", usize::MAX)))
                 }
             },
             _ => return Err(CLIArgumentsError::IncorrectArguments(format!("Argument '{name}' does not exist")))
@@ -58,4 +58,3 @@ pub fn interpret_arguments(args: Vec<String>) -> Result<CLIArguments, CLIArgumen
 
     Ok(CLIArguments { target_number, save_step })
 }
-

@@ -1,11 +1,13 @@
 mod args_parser;
+mod factorial_calculator;
 
 use std::env;
 use std::error::Error;
+use std::time::Instant;
 use args_parser::*;
 use big_numbers::*;
 use indicatif::ProgressBar;
-use rug::Integer;
+
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
@@ -17,22 +19,24 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let target = arguments.target_number;
     let save_step = arguments.save_step;
-    println!("Calculating {target}!");
 
-    let progress_bar = ProgressBar::new(target);
+    let progress_bar = ProgressBar::new(target as u64);
 
-    let mut factorial = Integer::from(1);
-    for x in 2..=target {
-        factorial *= x;
-        if x % 10000 == 0 {
-            progress_bar.set_position(x);
-        }
-        if save_step.is_some_and(|save_step| x % save_step == 0 && x != target) {
-            save_number(&format!("{x}!"), &factorial).await.map_err(|error| error.to_string())?;
-        }
+    let start_time = Instant::now();
+
+    let mut number = if let Some(savestep) = save_step { savestep } else { target };
+    while number <= target {
+        progress_bar.println(format!("calculating {number}!"));
+
+        let factorial = factorial_calculator::factorial(number);
+        save_number(&format!("{number}!"), &factorial).await.map_err(|error| error.to_string())?;
+
+        progress_bar.set_position(number as u64);
+
+        number += if let Some(savestep) = save_step { savestep } else { 1 };
     }
+    println!("done in {:?}", Instant::now() - start_time);
 
-    save_number(&format!("{target}!"), &factorial).await.map_err(|error| error.to_string())?;
 
     Ok(())
 }
