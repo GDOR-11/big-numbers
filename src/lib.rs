@@ -11,6 +11,7 @@ use rug;
 #[derive(Debug)]
 pub enum RemoteError {
     WorkingTreeNotClean,
+    NumberTooBig,
     FileCreationError(std::io::Error),
     FileDeletionError(std::io::Error),
     GithubRequestError(reqwest::Error),
@@ -21,6 +22,7 @@ impl Display for RemoteError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::WorkingTreeNotClean => write!(f, "working tree not clean"),
+            Self::NumberTooBig => write!(f, "the number is too big to be saved on github"),
             Self::FileCreationError(error) => write!(f, "could not create local file ({error})"),
             Self::FileDeletionError(error) => write!(f, "could not delete local file ({error})"),
             Self::GithubRequestError(error) => write!(f, "could not get file data from github ({error})"),
@@ -33,6 +35,7 @@ impl Error for RemoteError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match self {
             Self::WorkingTreeNotClean => None,
+            Self::NumberTooBig => None,
             Self::FileCreationError(error) => Some(error),
             Self::FileDeletionError(error) => Some(error),
             Self::GithubRequestError(error) => Some(error),
@@ -53,6 +56,9 @@ pub fn number_filepath(number_title: &str, binary: bool) -> String {
 pub async fn save_number(number_title: &str, number: &rug::Integer) -> Result<(), RemoteError> {
     let digits = number.significant_bits() as f64 * 0.30103; // 0.30103 > log10(2),
                                                              // therefore digits > actual digits
+    if digits >= 104857600.0 {
+        return Err(RemoteError::NumberTooBig);
+    }
     if digits <= 52428800.0 {
         let file_path = &number_filepath(number_title, false);
         write_file(file_path, number.to_string().as_bytes())?;
