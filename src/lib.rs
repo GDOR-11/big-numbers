@@ -1,4 +1,4 @@
-use reqwest;
+use reqwest::{self, StatusCode};
 use std::fs::{self, File};
 use std::io::Write;
 use std::path::Path;
@@ -12,6 +12,7 @@ use rug;
 pub enum RemoteError {
     WorkingTreeNotClean,
     NumberTooBig,
+    FileNotFound,
     FileCreationError(std::io::Error),
     FileDeletionError(std::io::Error),
     GithubRequestError(reqwest::Error),
@@ -23,6 +24,7 @@ impl Display for RemoteError {
         match self {
             Self::WorkingTreeNotClean => write!(f, "working tree not clean"),
             Self::NumberTooBig => write!(f, "the number is too big to be saved on github"),
+            Self::FileNotFound => write!(f, "the file has not been found"),
             Self::FileCreationError(error) => write!(f, "could not create local file ({error})"),
             Self::FileDeletionError(error) => write!(f, "could not delete local file ({error})"),
             Self::GithubRequestError(error) => write!(f, "could not get file data from github ({error})"),
@@ -36,6 +38,7 @@ impl Error for RemoteError {
         match self {
             Self::WorkingTreeNotClean => None,
             Self::NumberTooBig => None,
+            Self::FileNotFound => None,
             Self::FileCreationError(error) => Some(error),
             Self::FileDeletionError(error) => Some(error),
             Self::GithubRequestError(error) => Some(error),
@@ -77,13 +80,12 @@ pub async fn read_file(file_path: &str) -> Result<Vec<u8>, RemoteError> {
         .duration_since(SystemTime::UNIX_EPOCH)
         .unwrap();
 
-    let bytes = reqwest::get(
+    let response = reqwest::get(
         format!("https://raw.githubusercontent.com/GDOR-11/factorial-calculator/main/{file_path}?token={:?}", now)
-    ).await
-    .map_err(|error| RemoteError::GithubRequestError(error))?
-    .bytes().await
-    .map_err(|error| RemoteError::GithubRequestError(error))?;
+    ).await.map_err(|error| RemoteError::GithubRequestError(error))?;
+    if response.status() != StatusCode::OK { return Err(RemoteError::FileNotFound); }
 
+    let bytes = response.bytes().await.map_err(|error| RemoteError::GithubRequestError(error))?;
     Ok(Vec::from(bytes))
 }
 pub fn write_file(file_path: &str, file_content: &[u8]) -> Result<(), RemoteError> {

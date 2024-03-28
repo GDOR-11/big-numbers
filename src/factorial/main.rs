@@ -17,8 +17,14 @@ async fn main() -> Result<(), Box<dyn Error>> {
         std::process::exit(1);
     });
 
+
     let target = arguments.target_number;
     let save_step = arguments.save_step;
+
+    if big_numbers::read_file(&number_filepath(&format!("{target}!"), true)).await.is_ok() {
+        println!("This factorial has already been calculated!");
+        return Ok(());
+    }
 
     let progress_bar = ProgressBar::new(target as u64);
 
